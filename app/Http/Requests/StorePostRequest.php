@@ -33,6 +33,26 @@ class StorePostRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Please add a title for your question.',
+            'title.min' => 'Make the title at least 8 characters so it is clear.',
+            'category_id.required' => 'Choose a category to organize your post.',
+            'summary.required' => 'Add a short summary so readers can scan quickly.',
+            'summary.min' => 'Summary should be at least 20 characters.',
+            'body.required' => 'Please write the main explanation.',
+            'body.min' => 'Detailed explanation should be at least 80 characters.',
+            'image.required' => 'Please upload a feature image.',
+            'image.image' => 'The uploaded file must be an image.',
+            'image.mimes' => 'Use JPG, JPEG, PNG, or WEBP format.',
+            'image.max' => 'Image must be 4MB or smaller.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge([

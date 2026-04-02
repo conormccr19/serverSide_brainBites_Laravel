@@ -6,8 +6,10 @@
     <section class="bb-cosmic-banner mb-8">
         <div>
             <p class="bb-chip">Creator Command Center</p>
-            <h1 class="bb-title-font mt-3 text-4xl text-white sm:text-5xl">Contributor Dashboard</h1>
-            <p class="mt-3 max-w-2xl text-sm text-cyan-100/85 sm:text-base">Track your momentum, manage posts, and keep BrainBites visually explosive.</p>
+            <h1 class="bb-title-font mt-3 text-4xl text-white sm:text-5xl">{{ $isAdminView ? 'Admin Dashboard' : 'Contributor Dashboard' }}</h1>
+            <p class="mt-3 max-w-2xl text-sm text-cyan-100/85 sm:text-base">
+                {{ $isAdminView ? 'Moderate all posts, keep quality high, and support creators.' : 'Track your momentum, manage posts, and keep BrainBites visually explosive.' }}
+            </p>
             <div class="mt-5">
                 <a href="{{ route('posts.create') }}" class="bb-button">Create New Post</a>
             </div>
@@ -55,7 +57,7 @@
     </section>
 
     <section class="bb-card overflow-x-auto">
-        <h2 class="mb-4 text-xl font-bold text-slate-900">Your Posts</h2>
+        <h2 class="mb-4 text-xl font-bold text-slate-900">{{ $isAdminView ? 'All Posts' : 'Your Posts' }}</h2>
 
         @if ($posts->isEmpty())
             <p class="text-sm text-slate-600">You have not created any posts yet.</p>
@@ -82,7 +84,12 @@
                                 >
                             </td>
                             <td class="px-3 py-3 font-semibold text-slate-800">{{ $post->title }}</td>
-                            <td class="px-3 py-3 text-slate-600">{{ $post->category->name }}</td>
+                            <td class="px-3 py-3 text-slate-600">
+                                {{ $post->category->name }}
+                                @if ($isAdminView)
+                                    <div class="mt-1 text-xs text-slate-500">by {{ $post->user->name }}</div>
+                                @endif
+                            </td>
                             <td class="px-3 py-3 text-slate-600">{{ $post->is_public ? 'Public' : 'Draft' }}</td>
                             <td class="px-3 py-3 text-slate-600">{{ $post->likes_count }}</td>
                             <td class="px-3 py-3">
@@ -90,10 +97,18 @@
                                     <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary">View</a>
                                     <a href="{{ route('posts.edit', $post) }}" class="bb-button-secondary">Edit</a>
 
-                                    <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Delete this post?')">
+                                    <form action="{{ route('posts.destroy', $post) }}" method="POST" data-delete-form="{{ $post->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="bb-button-secondary" type="submit">Delete</button>
+                                        <button
+                                            class="bb-button-secondary"
+                                            type="button"
+                                            data-delete-trigger
+                                            data-delete-form-id="{{ $post->id }}"
+                                            data-delete-title="{{ $post->title }}"
+                                        >
+                                            Delete
+                                        </button>
                                     </form>
                                 </div>
                             </td>

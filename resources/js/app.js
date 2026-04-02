@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeTiltCards();
 	initializePostPreview();
 	initializeReadingTools();
+	initializeDeletePrompts();
 	initializeBrainBot();
 
 	const counterInputs = document.querySelectorAll('[data-counter-target]');
@@ -566,6 +567,67 @@ function initializeHeroWaveCanvases() {
 		};
 
 		draw();
+	});
+}
+
+function initializeDeletePrompts() {
+	const modal = document.getElementById('deleteModal');
+	const modalText = document.getElementById('deleteModalText');
+	const confirmButton = document.getElementById('deleteModalConfirm');
+	const closeButtons = document.querySelectorAll('[data-delete-close]');
+	const triggers = document.querySelectorAll('[data-delete-trigger]');
+
+	if (!modal || !modalText || !confirmButton || !triggers.length) {
+		return;
+	}
+
+	// Hard reset to avoid stale state after refresh/navigation.
+	modal.hidden = true;
+
+	let activeForm = null;
+
+	const closeModal = () => {
+		modal.hidden = true;
+		activeForm = null;
+	};
+
+	triggers.forEach((trigger) => {
+		trigger.addEventListener('click', () => {
+			const formId = trigger.getAttribute('data-delete-form-id');
+			const title = trigger.getAttribute('data-delete-title') || 'this post';
+			const form = formId ? document.querySelector(`[data-delete-form="${formId}"]`) : null;
+
+			if (!form) {
+				return;
+			}
+
+			activeForm = form;
+			modalText.textContent = `Delete "${title}"? This action cannot be undone.`;
+			modal.hidden = false;
+		});
+	});
+
+	closeButtons.forEach((button) => {
+		button.addEventListener('click', closeModal);
+	});
+
+	modal.addEventListener('click', (event) => {
+		if (event.target === modal) {
+			closeModal();
+		}
+	});
+
+	confirmButton.addEventListener('click', () => {
+		if (activeForm) {
+			activeForm.submit();
+		}
+		closeModal();
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && !modal.hidden) {
+			closeModal();
+		}
 	});
 }
 

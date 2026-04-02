@@ -55,10 +55,18 @@
                 @can('update', $post)
                     <a href="{{ route('posts.edit', $post) }}" class="bb-button-secondary">Edit</a>
 
-                    <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Delete this post?')">
+                    <form action="{{ route('posts.destroy', $post) }}" method="POST" data-delete-form="{{ $post->id }}">
                         @csrf
                         @method('DELETE')
-                        <button class="bb-button-secondary" type="submit">Delete</button>
+                        <button
+                            class="bb-button-secondary"
+                            type="button"
+                            data-delete-trigger
+                            data-delete-form-id="{{ $post->id }}"
+                            data-delete-title="{{ $post->title }}"
+                        >
+                            Delete
+                        </button>
                     </form>
                 @endcan
             </div>

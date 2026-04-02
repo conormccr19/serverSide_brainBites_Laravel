@@ -416,6 +416,40 @@
 		border-radius: 0.6rem;
 		padding: 0.5rem 0.8rem;
 	}
+
+	.bb-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 120;
+		display: grid;
+		place-items: center;
+	}
+
+	.bb-modal[hidden] {
+		display: none !important;
+	}
+
+	.bb-modal-backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(2, 8, 23, 0.62);
+		backdrop-filter: blur(3px);
+	}
+
+	.bb-modal-panel {
+		position: relative;
+		z-index: 1;
+		width: min(480px, calc(100vw - 2rem));
+		border: 1px solid rgba(255, 255, 255, 0.72);
+		border-radius: 1rem;
+		background: rgba(255, 255, 255, 0.96);
+		padding: 1.25rem;
+		box-shadow: 0 35px 60px rgba(2, 8, 23, 0.35);
+	}
+
+	body.theme-dark .bb-modal-panel {
+		@apply border-slate-700 bg-slate-900;
+	}
 }
 
 @keyframes bbFloat {

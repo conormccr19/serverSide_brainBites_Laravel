@@ -57,5 +57,17 @@
 
             @yield('content')
         </main>
+
+        <div id="deleteModal" class="bb-modal" hidden>
+            <div class="bb-modal-backdrop" data-delete-close></div>
+            <div class="bb-modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalText">
+                <h2 id="deleteModalTitle" class="text-xl font-bold text-slate-900">Delete Post?</h2>
+                <p id="deleteModalText" class="mt-2 text-sm text-slate-600">This action cannot be undone.</p>
+                <div class="mt-5 flex gap-2">
+                    <button type="button" class="bb-button-secondary" data-delete-close>Cancel</button>
+                    <button type="button" class="bb-button" id="deleteModalConfirm">Yes, delete it</button>
+                </div>
+            </div>
+        </div>
     </body>
 </html>

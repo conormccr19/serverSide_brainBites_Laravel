@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PostController::class, 'index'])->name('home');
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
-Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 Route::get('/brainbot', [PageController::class, 'brainbot'])->name('brainbot.page');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
@@ -37,5 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/contact-messages', [ContactMessageController::class, 'index'])->name('admin.contact-messages.index');
     Route::patch('/admin/contact-messages/{contactMessage}/resolve', [ContactMessageController::class, 'toggleResolved'])->name('admin.contact-messages.resolve');
 });
+
+Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 
 require __DIR__.'/auth.php';

@@ -23,7 +23,7 @@
     </section>
 
     <section class="bb-glass p-5 sm:p-8">
-        <form action="{{ route('contact.submit') }}" method="POST" class="grid gap-5 md:grid-cols-2">
+        <form action="{{ route('contact.submit') }}" method="POST" class="grid gap-5 md:grid-cols-2" novalidate>
             @csrf
 
             <div>
