@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeTiltCards();
 	initializePostPreview();
 	initializeReadingTools();
+	initializeBrainBot();
 
 	const counterInputs = document.querySelectorAll('[data-counter-target]');
 
@@ -238,6 +239,93 @@ async function initializeTopicMap() {
 	};
 
 	animate();
+}
+
+function initializeBrainBot() {
+	const panel = document.getElementById('brainbotPanel');
+	const toggle = document.getElementById('brainbotToggle');
+	const form = document.getElementById('brainbotForm');
+	const input = document.getElementById('brainbotInput');
+	const messages = document.getElementById('brainbotMessages');
+	const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+	if (!panel || !toggle || !form || !input || !messages || !csrfToken) {
+		return;
+	}
+
+	const addMessage = (text, role) => {
+		const bubble = document.createElement('article');
+		bubble.className = `bb-brainbot-message ${role}`;
+		bubble.textContent = text;
+		messages.appendChild(bubble);
+		messages.scrollTop = messages.scrollHeight;
+	};
+
+	const setOpen = (open) => {
+		panel.hidden = !open;
+		toggle.setAttribute('aria-expanded', String(open));
+		if (open) {
+			input.focus();
+		}
+	};
+
+	toggle.addEventListener('click', () => {
+		setOpen(panel.hidden);
+	});
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const message = input.value.trim();
+
+		if (!message) {
+			return;
+		}
+
+		addMessage(message, 'user');
+		input.value = '';
+		input.disabled = true;
+
+		const loading = document.createElement('article');
+		loading.className = 'bb-brainbot-message bot is-loading';
+		loading.textContent = 'brainBot is thinking...';
+		messages.appendChild(loading);
+		messages.scrollTop = messages.scrollHeight;
+
+		try {
+			const response = await fetch('/brainbot/chat', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': csrfToken,
+					'Accept': 'application/json',
+				},
+				body: JSON.stringify({ message }),
+			});
+
+			const data = await response.json();
+			loading.remove();
+
+			if (!response.ok) {
+				addMessage('I hit an error while answering. Please try again.', 'bot');
+				return;
+			}
+
+			addMessage(data.answer || 'I could not generate an answer yet.', 'bot');
+
+			if (Array.isArray(data.sources) && data.sources.length) {
+				const sourceList = data.sources.slice(0, 3)
+					.map((source, index) => `${index + 1}. ${source.title} (${source.url})`)
+					.join('\n');
+				addMessage(`Sources:\n${sourceList}`, 'bot');
+			}
+		} catch {
+			loading.remove();
+			addMessage('I could not reach the service right now. Please try again.', 'bot');
+		} finally {
+			input.disabled = false;
+			input.focus();
+		}
+	});
 }
 
 function createParticleCloud(THREE) {

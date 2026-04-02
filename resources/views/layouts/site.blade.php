@@ -50,5 +50,28 @@
 
             @yield('content')
         </main>
+
+        <button type="button" class="bb-brainbot-toggle" id="brainbotToggle" aria-controls="brainbotPanel" aria-expanded="false">
+            brainBot
+        </button>
+
+        <section class="bb-brainbot" id="brainbotPanel" aria-live="polite" hidden>
+            <header class="bb-brainbot-header">
+                <h2>brainBot</h2>
+                <p>Web-aware learning assistant</p>
+            </header>
+
+            <div class="bb-brainbot-messages" id="brainbotMessages">
+                <article class="bb-brainbot-message bot">
+                    Ask me anything. I can search the web and summarize answers.
+                </article>
+            </div>
+
+            <form class="bb-brainbot-form" id="brainbotForm">
+                <label for="brainbotInput" class="sr-only">Ask brainBot</label>
+                <input id="brainbotInput" type="text" maxlength="500" placeholder="Ask a question..." required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
     </body>
 </html>
