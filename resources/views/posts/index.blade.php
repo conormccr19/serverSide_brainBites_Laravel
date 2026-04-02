@@ -26,13 +26,69 @@
             </div>
         </div>
 
-        <div class="bb-hero-visual" data-hero-visual>
-            <canvas id="brainbites-hero-canvas" class="bb-hero-canvas" aria-hidden="true"></canvas>
+        <div class="bb-hero-visual" data-three-wrapper>
+            <canvas id="brainbites-hero-canvas" class="bb-hero-canvas" data-three-model="hero" aria-hidden="true"></canvas>
             <span class="bb-orbit-chip -a">Live 3D Orbit</span>
             <span class="bb-orbit-chip -b">Interactive Cards</span>
             <span class="bb-orbit-chip -c">Fast Discovery</span>
         </div>
     </section>
+
+    <section class="mb-10 grid gap-4 md:grid-cols-3">
+        <article class="bb-model-card" data-three-wrapper>
+            <div class="bb-model-visual">
+                <canvas class="bb-model-canvas" data-three-model="atom" aria-hidden="true"></canvas>
+            </div>
+            <h3 class="mt-4 text-lg font-bold text-slate-900">Microverse Lab</h3>
+            <p class="mt-2 text-sm text-slate-600">Orbiting atom scene for chemistry and physics explainers.</p>
+        </article>
+
+        <article class="bb-model-card" data-three-wrapper>
+            <div class="bb-model-visual">
+                <canvas class="bb-model-canvas" data-three-model="galaxy" aria-hidden="true"></canvas>
+            </div>
+            <h3 class="mt-4 text-lg font-bold text-slate-900">Galaxy Flow</h3>
+            <p class="mt-2 text-sm text-slate-600">Spinning stellar knot to frame deep-space style topics.</p>
+        </article>
+
+        <article class="bb-model-card" data-three-wrapper>
+            <div class="bb-model-visual">
+                <canvas class="bb-model-canvas" data-three-model="crystal" aria-hidden="true"></canvas>
+            </div>
+            <h3 class="mt-4 text-lg font-bold text-slate-900">Crystal Core</h3>
+            <p class="mt-2 text-sm text-slate-600">Neon faceted geometry for tech and innovation concepts.</p>
+        </article>
+    </section>
+
+    @php
+        $orbitImages = $posts->getCollection()->take(6);
+    @endphp
+
+    @if ($orbitImages->isNotEmpty())
+        <section class="bb-image-mosaic mb-10">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-slate-900">Visual Orbit</h2>
+                <p class="text-sm font-medium text-slate-600">Swipe your eyes across the universe of ideas</p>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($orbitImages as $imagePost)
+                    <a href="{{ route('posts.show', $imagePost) }}" class="bb-mosaic-tile" data-tilt-card>
+                        <div data-tilt-glare class="bb-post-glare"></div>
+                        <img
+                            src="{{ str_starts_with($imagePost->image_path, 'http') ? $imagePost->image_path : Storage::url($imagePost->image_path) }}"
+                            alt="{{ $imagePost->title }}"
+                            class="h-52 w-full rounded-xl object-cover"
+                        >
+                        <div class="mt-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">{{ $imagePost->category->name }}</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ $imagePost->title }}</p>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     <section class="bb-glass bb-search-panel">
         <form action="{{ route('posts.index') }}" method="GET" class="grid gap-4 md:grid-cols-4 md:items-end">

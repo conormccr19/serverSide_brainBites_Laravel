@@ -3,27 +3,36 @@
 @section('title', 'BrainBites | Dashboard')
 
 @section('content')
-    <section class="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <section class="bb-cosmic-banner mb-8" data-three-wrapper>
         <div>
-            <h1 class="bb-title-font text-4xl text-slate-900">Contributor Dashboard</h1>
-            <p class="mt-2 text-sm text-slate-600">Manage your posts and track engagement.</p>
+            <p class="bb-chip">Creator Command Center</p>
+            <h1 class="bb-title-font mt-3 text-4xl text-white sm:text-5xl">Contributor Dashboard</h1>
+            <p class="mt-3 max-w-2xl text-sm text-cyan-100/85 sm:text-base">Track your momentum, manage posts, and keep BrainBites visually explosive.</p>
+            <div class="mt-5">
+                <a href="{{ route('posts.create') }}" class="bb-button">Create New Post</a>
+            </div>
         </div>
 
-        <a href="{{ route('posts.create') }}" class="bb-button">Create New Post</a>
+        <div class="bb-model-visual min-h-[220px]">
+            <canvas class="bb-model-canvas" data-three-model="galaxy" aria-hidden="true"></canvas>
+        </div>
     </section>
 
     <section class="mb-8 grid gap-4 sm:grid-cols-3">
-        <article class="bb-card">
+        <article class="bb-model-card" data-tilt-card>
+            <div data-tilt-glare class="bb-post-glare"></div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Posts</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $stats['total_posts'] }}</p>
         </article>
 
-        <article class="bb-card">
+        <article class="bb-model-card" data-tilt-card>
+            <div data-tilt-glare class="bb-post-glare"></div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Public Posts</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $stats['public_posts'] }}</p>
         </article>
 
-        <article class="bb-card">
+        <article class="bb-model-card" data-tilt-card>
+            <div data-tilt-glare class="bb-post-glare"></div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Likes</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $stats['total_likes'] }}</p>
         </article>
@@ -38,6 +47,7 @@
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                        <th class="px-3 py-2">Image</th>
                         <th class="px-3 py-2">Title</th>
                         <th class="px-3 py-2">Category</th>
                         <th class="px-3 py-2">Visibility</th>
@@ -48,6 +58,13 @@
                 <tbody>
                     @foreach ($posts as $post)
                         <tr class="border-b border-slate-100">
+                            <td class="px-3 py-3">
+                                <img
+                                    src="{{ str_starts_with($post->image_path, 'http') ? $post->image_path : Storage::url($post->image_path) }}"
+                                    alt="{{ $post->title }}"
+                                    class="h-16 w-24 rounded-lg object-cover"
+                                >
+                            </td>
                             <td class="px-3 py-3 font-semibold text-slate-800">{{ $post->title }}</td>
                             <td class="px-3 py-3 text-slate-600">{{ $post->category->name }}</td>
                             <td class="px-3 py-3 text-slate-600">{{ $post->is_public ? 'Public' : 'Draft' }}</td>
