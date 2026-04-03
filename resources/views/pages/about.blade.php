@@ -16,8 +16,10 @@
         </div>
 
         <div class="bb-focus-card text-cyan-50">
-            <p class="text-xs uppercase tracking-[0.2em] text-cyan-200">Signal Field</p>
-            <canvas class="bb-hero-wave-canvas" data-hero-wave="about" aria-hidden="true"></canvas>
+            <p class="text-xs uppercase tracking-[0.2em] text-cyan-200">Floating Knowledge Banner</p>
+            <div class="bb-hero-3d-wrap" aria-hidden="true">
+                <canvas class="bb-hero-3d-canvas" data-hero-3d="about"></canvas>
+            </div>
             <ul class="mt-3 space-y-2 text-sm text-cyan-100/90">
                 <li>Curiosity should be celebrated, not judged.</li>
                 <li>Good explanations are short, clear, and visual.</li>

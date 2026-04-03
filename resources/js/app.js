@@ -9,7 +9,7 @@ Alpine.start();
 document.addEventListener('DOMContentLoaded', () => {
 	initializeThemeToggle();
 	initializeTopicMap();
-	initializeHeroWaveCanvases();
+	initializePageHero3D();
 	initializeTiltCards();
 	initializePostPreview();
 	initializeReadingTools();
@@ -508,68 +508,6 @@ function initializeReadingTools() {
 	});
 }
 
-function initializeHeroWaveCanvases() {
-	const canvases = document.querySelectorAll('[data-hero-wave]');
-
-	if (!canvases.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-		return;
-	}
-
-	canvases.forEach((canvas) => {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) {
-			return;
-		}
-
-		const resize = () => {
-			const width = canvas.clientWidth;
-			const height = canvas.clientHeight;
-			canvas.width = Math.max(1, Math.floor(width * window.devicePixelRatio));
-			canvas.height = Math.max(1, Math.floor(height * window.devicePixelRatio));
-			ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-		};
-
-		resize();
-		window.addEventListener('resize', resize);
-
-		let frame = 0;
-
-		const draw = () => {
-			const width = canvas.clientWidth;
-			const height = canvas.clientHeight;
-			ctx.clearRect(0, 0, width, height);
-
-			for (let layer = 0; layer < 3; layer += 1) {
-				ctx.beginPath();
-				const amplitude = 8 + (layer * 4);
-				const speed = 0.01 + (layer * 0.0035);
-				const offset = layer * 1.7;
-
-				for (let x = 0; x <= width; x += 4) {
-					const y = (height * 0.5)
-						+ Math.sin((x * 0.03) + (frame * speed) + offset) * amplitude
-						+ Math.cos((x * 0.01) + (frame * speed * 1.7)) * (amplitude * 0.35);
-
-					if (x === 0) {
-						ctx.moveTo(x, y);
-					} else {
-						ctx.lineTo(x, y);
-					}
-				}
-
-				ctx.strokeStyle = `rgba(${layer === 0 ? '34,211,238' : layer === 1 ? '163,230,53' : '255,255,255'}, ${0.3 - (layer * 0.07)})`;
-				ctx.lineWidth = 1.3;
-				ctx.stroke();
-			}
-
-			frame += 1;
-			window.requestAnimationFrame(draw);
-		};
-
-		draw();
-	});
-}
-
 function initializeDeletePrompts() {
 	const modal = document.getElementById('deleteModal');
 	const modalText = document.getElementById('deleteModalText');
@@ -628,6 +566,140 @@ function initializeDeletePrompts() {
 		if (event.key === 'Escape' && !modal.hidden) {
 			closeModal();
 		}
+	});
+}
+
+async function initializePageHero3D() {
+	const canvases = document.querySelectorAll('[data-hero-3d]');
+
+	if (!canvases.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		return;
+	}
+
+	const THREE = await import('three');
+
+	canvases.forEach((canvas) => {
+		const variant = canvas.getAttribute('data-hero-3d') || 'about';
+		const renderer = new THREE.WebGLRenderer({
+			canvas,
+			alpha: true,
+			antialias: true,
+		});
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+		const scene = new THREE.Scene();
+		const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 70);
+		camera.position.set(0, 0.2, 8.5);
+
+		scene.add(new THREE.AmbientLight(0xc7f9ff, 0.65));
+
+		const keyLight = new THREE.DirectionalLight(0xffffff, 0.85);
+		keyLight.position.set(2.5, 2.5, 6);
+		scene.add(keyLight);
+
+		const edgeLight = new THREE.PointLight(variant === 'contact' ? 0xfbbf24 : 0x22d3ee, 1.2, 24);
+		edgeLight.position.set(-3, 0.8, 4);
+		scene.add(edgeLight);
+
+		const lanePalette = variant === 'contact'
+			? [0x22d3ee, 0x84cc16, 0xfbbf24, 0xf97316]
+			: [0x22d3ee, 0x93c5fd, 0x84cc16, 0xa78bfa];
+
+		const lanes = [];
+		const laneY = [1.1, 0.45, -0.2, -0.9];
+
+		for (let i = 0; i < 12; i += 1) {
+			const color = lanePalette[i % lanePalette.length];
+			const depth = -1.5 + ((i % 4) * 0.8);
+			const width = 1.0 + ((i % 3) * 0.35);
+			const height = 0.26 + ((i % 2) * 0.08);
+
+			const capsule = new THREE.Mesh(
+				new THREE.BoxGeometry(width, height, 0.18),
+				new THREE.MeshStandardMaterial({
+					color,
+					emissive: 0x11223a,
+					metalness: 0.25,
+					roughness: 0.28,
+				})
+			);
+
+			capsule.position.set(-10 - (i * 1.7), laneY[i % laneY.length], depth);
+			capsule.rotation.y = (i % 2 === 0 ? 0.42 : -0.38);
+			capsule.rotation.z = (i % 3 === 0 ? -0.2 : 0.18);
+			scene.add(capsule);
+
+			lanes.push({
+				mesh: capsule,
+				speed: 0.015 + ((i % 4) * 0.004),
+				laneY: laneY[i % laneY.length],
+				wobble: 0.16 + ((i % 3) * 0.03),
+			});
+		}
+
+		const ring = new THREE.Mesh(
+			new THREE.TorusGeometry(1.7, 0.035, 14, 96),
+			new THREE.MeshBasicMaterial({
+				color: variant === 'contact' ? 0xfbbf24 : 0x22d3ee,
+				transparent: true,
+				opacity: 0.45,
+			})
+		);
+		ring.position.set(0.1, 0, -1.7);
+		ring.rotation.x = 1.25;
+		ring.rotation.y = 0.28;
+		scene.add(ring);
+
+		const core = new THREE.Mesh(
+			new THREE.IcosahedronGeometry(0.38, 1),
+			new THREE.MeshStandardMaterial({
+				color: variant === 'contact' ? 0xf97316 : 0x22d3ee,
+				emissive: 0x09223a,
+				metalness: 0.35,
+				roughness: 0.25,
+				flatShading: true,
+			})
+		);
+		core.position.set(0, 0, -1.4);
+		scene.add(core);
+
+		const resize = () => {
+			const width = canvas.clientWidth;
+			const height = canvas.clientHeight;
+			if (!width || !height) {
+				return;
+			}
+
+			renderer.setSize(width, height, false);
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+		};
+
+		resize();
+		window.addEventListener('resize', resize);
+
+		let t = 0;
+		const animate = () => {
+			t += 1;
+			core.rotation.x += 0.014;
+			core.rotation.y += 0.018;
+			ring.rotation.z += 0.004;
+
+			lanes.forEach((lane, index) => {
+				lane.mesh.position.x += lane.speed;
+				lane.mesh.position.y = lane.laneY + Math.sin((t * 0.01) + index) * lane.wobble;
+				lane.mesh.rotation.y += 0.0025;
+
+				if (lane.mesh.position.x > 10.5) {
+					lane.mesh.position.x = -10.5;
+				}
+			});
+
+			renderer.render(scene, camera);
+			window.requestAnimationFrame(animate);
+		};
+
+		animate();
 	});
 }
 

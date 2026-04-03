@@ -13,8 +13,10 @@
         </div>
 
         <div class="bb-focus-card text-cyan-50">
-            <p class="text-xs uppercase tracking-[0.2em] text-cyan-200">Pulse Link</p>
-            <canvas class="bb-hero-wave-canvas" data-hero-wave="contact" aria-hidden="true"></canvas>
+            <p class="text-xs uppercase tracking-[0.2em] text-cyan-200">Floating Signal Banner</p>
+            <div class="bb-hero-3d-wrap" aria-hidden="true">
+                <canvas class="bb-hero-3d-canvas" data-hero-3d="contact"></canvas>
+            </div>
             <h3 class="mt-1 text-lg font-semibold">Use This Form</h3>
             <p class="mt-2 text-sm text-cyan-100/90">
                 Messages are logged directly into the app so the team can respond quickly.

@@ -146,14 +146,31 @@
 		@apply rounded-2xl border border-white/25 bg-slate-900/45 p-4 backdrop-blur;
 	}
 
-	.bb-hero-wave-canvas {
+	.bb-hero-3d-wrap {
+		position: relative;
+		height: 150px;
+		margin-top: 0.75rem;
+		overflow: hidden;
+		border-radius: 0.9rem;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		background:
+			radial-gradient(circle at 22% 24%, rgba(34, 211, 238, 0.25), rgba(34, 211, 238, 0) 42%),
+			radial-gradient(circle at 80% 70%, rgba(163, 230, 53, 0.22), rgba(163, 230, 53, 0) 38%),
+			linear-gradient(135deg, rgba(5, 23, 42, 0.7), rgba(15, 23, 42, 0.42));
+	}
+
+	.bb-hero-3d-canvas {
 		display: block;
 		width: 100%;
-		height: 130px;
-		border-radius: 0.9rem;
-		margin-top: 0.75rem;
-		background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.15), rgba(0, 0, 0, 0));
-		border: 1px solid rgba(255, 255, 255, 0.18);
+		height: 100%;
+	}
+
+	body.theme-dark .bb-hero-3d-wrap {
+		border-color: rgba(71, 85, 105, 0.8);
+		background:
+			radial-gradient(circle at 22% 24%, rgba(34, 211, 238, 0.16), rgba(34, 211, 238, 0) 42%),
+			radial-gradient(circle at 80% 70%, rgba(163, 230, 53, 0.14), rgba(163, 230, 53, 0) 38%),
+			linear-gradient(135deg, rgba(2, 6, 23, 0.82), rgba(15, 23, 42, 0.75));
 	}
 
 	.bb-model-card {
@@ -462,6 +479,7 @@
 		transform: translateY(-9px);
 	}
 }
+
 
 @keyframes bbPulse {
 	0%,
