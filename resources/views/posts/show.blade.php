@@ -44,19 +44,27 @@
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">{{ $post->likes->count() }} likes</span>
 
                 @auth
-                    <form action="{{ route('posts.like', $post) }}" method="POST">
-                        @csrf
-                        <button class="bb-button-secondary" type="submit">
-                            {{ $post->isLikedBy(auth()->user()) ? 'Unlike' : 'Like this answer' }}
-                        </button>
-                    </form>
+                    @unless (auth()->user()->isAdmin())
+                        <form action="{{ route('posts.like', $post) }}" method="POST">
+                            @csrf
+                            <button class="bb-button-secondary" type="submit">
+                                {{ $post->isLikedBy(auth()->user()) ? 'Unlike' : 'Like this answer' }}
+                            </button>
+                        </form>
+                    @else
+                        <span class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">Likes disabled for admin accounts</span>
+                    @endunless
 
-                    <form action="{{ route('posts.bookmark', $post) }}" method="POST">
-                        @csrf
-                        <button class="bb-button-secondary" type="submit">
-                            {{ $post->isBookmarkedBy(auth()->user()) ? 'Remove bookmark' : 'Save bookmark' }}
-                        </button>
-                    </form>
+                    @unless (auth()->user()->isAdmin())
+                        <form action="{{ route('posts.bookmark', $post) }}" method="POST">
+                            @csrf
+                            <button class="bb-button-secondary" type="submit">
+                                {{ $post->isBookmarkedBy(auth()->user()) ? 'Remove bookmark' : 'Save bookmark' }}
+                            </button>
+                        </form>
+                    @else
+                        <span class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">Bookmarks disabled for admin accounts</span>
+                    @endunless
                 @else
                     <a href="{{ route('login') }}" class="bb-button-secondary">Log in to like</a>
                 @endauth

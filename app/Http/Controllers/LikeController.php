@@ -11,6 +11,8 @@ class LikeController extends Controller
 {
     public function __invoke(Request $request, Post $post): RedirectResponse
     {
+        abort_if($request->user()->isAdmin(), 403);
+
         if (! $post->is_public && $request->user()->cannot('view', $post)) {
             abort(403);
         }

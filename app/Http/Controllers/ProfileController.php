@@ -17,6 +17,8 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        abort_if($request->user()->isAdmin(), 403);
+
         return view('profile.edit', [
             'user' => $request->user(),
         ]);
@@ -27,6 +29,8 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        abort_if($request->user()->isAdmin(), 403);
+
         $user = $request->user();
         $data = $request->validated();
 
@@ -56,6 +60,8 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        abort_if($request->user()->isAdmin(), 403);
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
