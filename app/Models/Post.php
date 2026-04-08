@@ -60,6 +60,11 @@ class Post extends Model
         return $this->hasMany(Bookmark::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function scopePublic(Builder $query): Builder
     {
         return $query->where('is_public', true)

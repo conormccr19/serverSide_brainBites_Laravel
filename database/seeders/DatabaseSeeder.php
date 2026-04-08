@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Bookmark;
+use App\Models\Comment;
 use App\Models\ContactMessage;
 use App\Models\Like;
 use App\Models\Category;
@@ -92,6 +93,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedLikes($publicPosts, $reader, $contributor, $admin);
         $this->seedBookmarks($publicPosts, $reader, $contributor);
+        $this->seedComments($publicPosts, $reader, $contributor, $admin);
         $this->seedContactMessages($admin);
     }
 
@@ -274,6 +276,32 @@ class DatabaseSeeder extends Seeder
             Bookmark::query()->updateOrCreate([
                 'user_id' => $user->id,
                 'post_id' => $post->id,
+            ]);
+        }
+    }
+
+    private function seedComments($posts, User $reader, User $contributor, User $admin): void
+    {
+        $commentMap = [
+            [$reader, 'how-does-a-database-index-speed-up-queries', 'That book analogy really helps. Do B-trees matter for most database engines?'],
+            [$contributor, 'what-is-an-api-in-simple-terms', 'This is the clearest explanation I have seen for non-developers.'],
+            [$admin, 'why-does-salt-help-melt-ice', 'Good winter example. We could add a note about brine not freezing as quickly.'],
+            [$reader, 'why-does-iron-rust-over-time', 'Would coating with oil work as a temporary fix?'],
+            [$contributor, 'how-does-the-heart-pump-blood-through-the-body', 'The four chambers explanation makes this much easier to visualize.'],
+            [$admin, 'what-causes-a-rainbow-in-the-sky', 'Nice concise breakdown of refraction and reflection.'],
+        ];
+
+        foreach ($commentMap as [$user, $slug, $body]) {
+            $post = $posts->firstWhere('slug', $slug);
+
+            if (! $post) {
+                continue;
+            }
+
+            Comment::query()->updateOrCreate([
+                'user_id' => $user->id,
+                'post_id' => $post->id,
+                'body' => $body,
             ]);
         }
     }

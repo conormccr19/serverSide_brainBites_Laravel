@@ -42,6 +42,7 @@
 
             <div class="mt-6 flex flex-wrap items-center gap-3">
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">{{ $post->likes->count() }} likes</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">{{ $post->comments->count() }} comments</span>
 
                 @auth
                     @unless (auth()->user()->isAdmin())
@@ -118,6 +119,61 @@
                     </div>
                 </div>
             @endif
+
+            <section class="bb-card mt-4">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-bold text-slate-900">Comments</h2>
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">{{ $post->comments->count() }} total</span>
+                </div>
+
+                @auth
+                    <form action="{{ route('comments.store', $post) }}" method="POST" class="mt-4 grid gap-3">
+                        @csrf
+                        <div>
+                            <label for="commentBody" class="bb-label">Add a comment</label>
+                            <textarea id="commentBody" name="body" rows="4" class="bb-textarea" maxlength="1000" required placeholder="Share a thought, add context, or ask a follow-up.">{{ old('body') }}</textarea>
+                            @error('body')<p class="bb-error">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <button type="submit" class="bb-button">Post Comment</button>
+                        </div>
+                    </form>
+                @else
+                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <a href="{{ route('login') }}" class="font-semibold text-cyan-700">Log in</a> to join the discussion.
+                    </div>
+                @endauth
+
+                <div class="mt-5 space-y-4">
+                    @forelse ($post->comments->sortByDesc('created_at') as $comment)
+                        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <img src="{{ $comment->user->profile_photo_url }}" alt="{{ $comment->user->name }}" class="h-10 w-10 rounded-full object-cover border border-slate-200">
+                                    <div>
+                                        <p class="font-semibold text-slate-900">{{ $comment->user->name }}</p>
+                                        <p class="text-xs text-slate-500">{{ $comment->created_at?->diffForHumans() }}</p>
+                                    </div>
+                                </div>
+
+                                @auth
+                                    @if (auth()->user()->isAdmin() || auth()->id() === $comment->user_id)
+                                        <form action="{{ route('comments.destroy', [$post, $comment]) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs font-semibold text-rose-600 transition hover:text-rose-700">Delete</button>
+                                        </form>
+                                    @endif
+                                @endauth
+                            </div>
+
+                            <p class="mt-3 whitespace-pre-wrap text-sm text-slate-700">{{ $comment->body }}</p>
+                        </article>
+                    @empty
+                        <p class="text-sm text-slate-600">No comments yet. Start the conversation.</p>
+                    @endforelse
+                </div>
+            </section>
         </aside>
     </article>
 @endsection

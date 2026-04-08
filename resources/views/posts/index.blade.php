@@ -263,6 +263,11 @@
                         <span>{{ $post->likes_count }} likes</span>
                     </div>
 
+                    <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                        <span></span>
+                        <span>{{ $post->comments_count }} comments</span>
+                    </div>
+
                     <div class="mt-4 flex items-center gap-2">
                         <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary">View</a>
 

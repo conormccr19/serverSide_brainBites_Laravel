@@ -50,6 +50,11 @@ class User extends Authenticatable
         return $this->hasMany(Bookmark::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function contactMessagesResolved(): HasMany
     {
         return $this->hasMany(ContactMessage::class, 'resolved_by');

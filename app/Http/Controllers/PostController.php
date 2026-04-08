@@ -25,7 +25,7 @@ class PostController extends Controller
 
         $postsQuery = Post::query()
             ->with(['user', 'category', 'likes', 'bookmarks'])
-            ->withCount('likes')
+            ->withCount(['likes', 'comments'])
             ->when(auth()->check(), function ($query): void {
                 $query->where(function ($nested): void {
                     $nested->where('is_public', true)
@@ -65,7 +65,7 @@ class PostController extends Controller
         $featuredPosts = Post::query()
             ->public()
             ->with(['user', 'category', 'likes', 'bookmarks'])
-            ->withCount('likes')
+            ->withCount(['likes', 'comments'])
             ->orderByDesc('likes_count')
             ->orderByDesc('published_at')
             ->take(3)
@@ -110,7 +110,7 @@ class PostController extends Controller
         $freshPicks = Post::query()
             ->public()
             ->with(['user', 'category', 'bookmarks'])
-            ->withCount('likes')
+            ->withCount(['likes', 'comments'])
             ->latest('published_at')
             ->take(4)
             ->get();
@@ -188,11 +188,11 @@ class PostController extends Controller
             abort(403);
         }
 
-        $post->load(['user', 'category', 'likes', 'bookmarks']);
+        $post->load(['user', 'category', 'likes', 'bookmarks', 'comments.user']);
         $relatedPosts = Post::query()
             ->public()
             ->with(['user', 'category', 'bookmarks'])
-            ->withCount('likes')
+            ->withCount(['likes', 'comments'])
             ->where('id', '!=', $post->id)
             ->where('category_id', $post->category_id)
             ->orderByDesc('published_at')
