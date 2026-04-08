@@ -145,30 +145,8 @@
                 @endauth
 
                 <div class="mt-5 space-y-4">
-                    @forelse ($post->comments->sortByDesc('created_at') as $comment)
-                        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3">
-                                    <img src="{{ $comment->user->profile_photo_url }}" alt="{{ $comment->user->name }}" class="h-10 w-10 rounded-full object-cover border border-slate-200">
-                                    <div>
-                                        <p class="font-semibold text-slate-900">{{ $comment->user->name }}</p>
-                                        <p class="text-xs text-slate-500">{{ $comment->created_at?->diffForHumans() }}</p>
-                                    </div>
-                                </div>
-
-                                @auth
-                                    @if (auth()->user()->isAdmin() || auth()->id() === $comment->user_id)
-                                        <form action="{{ route('comments.destroy', [$post, $comment]) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs font-semibold text-rose-600 transition hover:text-rose-700">Delete</button>
-                                        </form>
-                                    @endif
-                                @endauth
-                            </div>
-
-                            <p class="mt-3 whitespace-pre-wrap text-sm text-slate-700">{{ $comment->body }}</p>
-                        </article>
+                    @forelse ($post->comments->whereNull('parent_comment_id')->sortByDesc('created_at') as $comment)
+                        @include('posts.partials.comment', ['post' => $post, 'comment' => $comment, 'depth' => 0])
                     @empty
                         <p class="text-sm text-slate-600">No comments yet. Start the conversation.</p>
                     @endforelse

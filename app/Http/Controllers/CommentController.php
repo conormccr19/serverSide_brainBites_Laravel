@@ -15,12 +15,23 @@ class CommentController extends Controller
 
         $data = $request->validate([
             'body' => ['required', 'string', 'min:2', 'max:1000'],
+            'parent_comment_id' => ['nullable', 'integer', 'exists:comments,id'],
         ]);
+
+        $parentComment = null;
+
+        if (! empty($data['parent_comment_id'])) {
+            $parentComment = Comment::query()
+                ->whereKey($data['parent_comment_id'])
+                ->where('post_id', $post->id)
+                ->firstOrFail();
+        }
 
         Comment::create([
             'user_id' => $request->user()->id,
             'post_id' => $post->id,
             'body' => $data['body'],
+            'parent_comment_id' => $parentComment?->id,
         ]);
 
         return back()->with('status', 'Comment posted successfully.');
@@ -33,7 +44,7 @@ class CommentController extends Controller
         abort_unless($comment->post_id === $post->id, 404);
         abort_unless($request->user()->isAdmin() || $request->user()->id === $comment->user_id, 403);
 
-        $comment->delete();
+        $this->deleteCommentTree($comment);
 
         return back()->with('status', 'Comment removed.');
     }
@@ -47,5 +58,17 @@ class CommentController extends Controller
         if ((! $post->is_public || $isScheduledForFuture) && (! auth()->check() || auth()->user()->cannot('view', $post))) {
             abort(403);
         }
+    }
+
+    private function deleteCommentTree(Comment $comment): void
+    {
+        Comment::query()
+            ->where('parent_comment_id', $comment->id)
+            ->get()
+            ->each(function (Comment $reply): void {
+                $this->deleteCommentTree($reply);
+            });
+
+        $comment->delete();
     }
 }

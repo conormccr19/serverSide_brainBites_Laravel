@@ -15,10 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('post_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('parent_comment_id')->nullable()->constrained('comments')->nullOnDelete();
             $table->text('body');
             $table->timestamps();
 
             $table->index(['post_id', 'created_at']);
+            $table->index(['parent_comment_id', 'created_at']);
         });
     }
 

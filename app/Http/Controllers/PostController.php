@@ -188,7 +188,7 @@ class PostController extends Controller
             abort(403);
         }
 
-        $post->load(['user', 'category', 'likes', 'bookmarks', 'comments.user']);
+        $post->load(['user', 'category', 'likes', 'bookmarks', 'comments.user', 'comments.replies.user', 'comments.replies.replies.user']);
         $relatedPosts = Post::query()
             ->public()
             ->with(['user', 'category', 'bookmarks'])

@@ -291,6 +291,13 @@ class DatabaseSeeder extends Seeder
             [$admin, 'what-causes-a-rainbow-in-the-sky', 'Nice concise breakdown of refraction and reflection.'],
         ];
 
+        $replyMap = [
+            [$contributor, 'how-does-a-database-index-speed-up-queries', 'Absolutely. B-trees are the most common place to start, especially in relational databases.', 'That book analogy really helps. Do B-trees matter for most database engines?'],
+            [$reader, 'what-is-an-api-in-simple-terms', 'Glad it landed well. I can add a concrete example with a weather app if that would help.', 'This is the clearest explanation I have seen for non-developers.'],
+            [$admin, 'why-does-salt-help-melt-ice', 'Yes, oil can help protect the surface temporarily, but it is not the same as preventing oxidation long term.', 'Would coating with oil work as a temporary fix?'],
+            [$reader, 'how-does-the-heart-pump-blood-through-the-body', 'The valve timing is the part that finally clicked for me too.', 'The four chambers explanation makes this much easier to visualize.'],
+        ];
+
         foreach ($commentMap as [$user, $slug, $body]) {
             $post = $posts->firstWhere('slug', $slug);
 
@@ -302,6 +309,25 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $user->id,
                 'post_id' => $post->id,
                 'body' => $body,
+            ]);
+        }
+
+        foreach ($replyMap as [$user, $slug, $body, $parentBody]) {
+            $post = $posts->firstWhere('slug', $slug);
+            $parentComment = Comment::query()
+                ->where('post_id', $post?->id)
+                ->where('body', $parentBody)
+                ->first();
+
+            if (! $post || ! $parentComment) {
+                continue;
+            }
+
+            Comment::query()->updateOrCreate([
+                'user_id' => $user->id,
+                'post_id' => $post->id,
+                'body' => $body,
+                'parent_comment_id' => $parentComment->id,
             ]);
         }
     }
