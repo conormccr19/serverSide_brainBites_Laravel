@@ -2,8 +2,17 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <x-input-error :messages="$errors->get('email')" class="mb-4" />
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
+
+        <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <a href="{{ route('auth.google.redirect') }}" class="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                Continue with Google
+            </a>
+            <p class="mt-2 text-center text-xs text-gray-500">Use Google to sign in faster without remembering another password.</p>
+        </div>
 
         <!-- Email Address -->
         <div>
