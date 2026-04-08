@@ -123,7 +123,7 @@
 
             <div class="md:col-span-4 flex flex-wrap gap-2">
                 <button class="bb-button" type="submit">Apply</button>
-                <a class="bb-button-secondary" href="{{ route('posts.index') }}">Reset</a>
+                <a href="{{ route('posts.index') }}" class="bb-button-secondary">Reset</a>
             </div>
         </form>
     </section>
@@ -133,7 +133,7 @@
             <h2 class="mb-4 text-xl font-bold text-slate-900">Featured Visual Stories</h2>
             <div class="grid gap-4 md:grid-cols-3">
                 @foreach ($featuredPosts as $featured)
-                    <article class="bb-feature-card" data-tilt-card>
+                    <a href="{{ route('posts.show', $featured) }}" class="bb-feature-card block" data-tilt-card aria-label="Read featured post: {{ $featured->title }}">
                         <div data-tilt-glare class="bb-post-glare"></div>
                         <img
                             src="{{ $featured->image_source }}"
@@ -146,9 +146,9 @@
                         <p class="mt-2 text-sm text-cyan-50/85">{{ $featured->summary }}</p>
                         <div class="mt-4 flex items-center justify-between text-xs text-cyan-100/75">
                             <span>{{ $featured->likes_count }} likes</span>
-                            <a href="{{ route('posts.show', $featured) }}" class="font-semibold text-lime-200">Read</a>
+                            <span class="font-semibold text-lime-200">Read</span>
                         </div>
-                    </article>
+                    </a>
                 @endforeach
             </div>
         </section>

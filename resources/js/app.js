@@ -7,6 +7,7 @@ window.Alpine = Alpine;
 Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
+	initializeMobileNav();
 	initializeThemeToggle();
 	initializeTopicMap();
 	initializePageHero3D();
@@ -384,15 +385,15 @@ function initializeBrainBot() {
 
 function initializeThemeToggle() {
 	const root = document.body;
-	const toggle = document.getElementById('themeToggle');
+	const toggles = [...document.querySelectorAll('[data-theme-toggle]')];
 	const key = 'bb-theme';
 
 	const applyTheme = (theme) => {
 		const dark = theme === 'dark';
 		root.classList.toggle('theme-dark', dark);
-		if (toggle) {
+		toggles.forEach((toggle) => {
 			toggle.textContent = dark ? 'Light mode' : 'Dark mode';
-		}
+		});
 	};
 
 	const saved = localStorage.getItem(key);
@@ -403,14 +404,47 @@ function initializeThemeToggle() {
 		applyTheme(prefersDark ? 'dark' : 'light');
 	}
 
-	if (!toggle) {
+	if (!toggles.length) {
 		return;
 	}
 
+	toggles.forEach((toggle) => {
+		toggle.addEventListener('click', () => {
+			const next = root.classList.contains('theme-dark') ? 'light' : 'dark';
+			localStorage.setItem(key, next);
+			applyTheme(next);
+		});
+	});
+}
+
+function initializeMobileNav() {
+	const toggle = document.getElementById('mobileNavToggle');
+	const panel = document.getElementById('mobileNavPanel');
+
+	if (!toggle || !panel) {
+		return;
+	}
+
+	const setOpen = (open) => {
+		panel.classList.toggle('hidden', !open);
+		toggle.setAttribute('aria-expanded', String(open));
+	};
+
 	toggle.addEventListener('click', () => {
-		const next = root.classList.contains('theme-dark') ? 'light' : 'dark';
-		localStorage.setItem(key, next);
-		applyTheme(next);
+		const open = panel.classList.contains('hidden');
+		setOpen(open);
+	});
+
+	panel.querySelectorAll('a, button[type="submit"]').forEach((element) => {
+		element.addEventListener('click', () => {
+			setOpen(false);
+		});
+	});
+
+	window.addEventListener('resize', () => {
+		if (window.innerWidth >= 768) {
+			setOpen(false);
+		}
 	});
 }
 
@@ -514,6 +548,7 @@ function initializeDeletePrompts() {
 	const confirmButton = document.getElementById('deleteModalConfirm');
 	const closeButtons = document.querySelectorAll('[data-delete-close]');
 	const triggers = document.querySelectorAll('[data-delete-trigger]');
+	const modalPanel = modal?.querySelector('.bb-modal-panel');
 
 	if (!modal || !modalText || !confirmButton || !triggers.length) {
 		return;
@@ -523,10 +558,38 @@ function initializeDeletePrompts() {
 	modal.hidden = true;
 
 	let activeForm = null;
+	let lastFocused = null;
+
+	const focusableSelector = [
+		'a[href]',
+		'button:not([disabled])',
+		'textarea:not([disabled])',
+		'input:not([disabled])',
+		'select:not([disabled])',
+		'[tabindex]:not([tabindex="-1"])',
+	].join(',');
+
+	const getFocusable = () => {
+		if (!modalPanel) {
+			return [];
+		}
+
+		return [...modalPanel.querySelectorAll(focusableSelector)];
+	};
+
+	const openModal = () => {
+		lastFocused = document.activeElement;
+		modal.hidden = false;
+		const focusable = getFocusable();
+		(focusable[0] || modalPanel)?.focus();
+	};
 
 	const closeModal = () => {
 		modal.hidden = true;
 		activeForm = null;
+		if (lastFocused instanceof HTMLElement) {
+			lastFocused.focus();
+		}
 	};
 
 	triggers.forEach((trigger) => {
@@ -541,7 +604,7 @@ function initializeDeletePrompts() {
 
 			activeForm = form;
 			modalText.textContent = `Delete "${title}"? This action cannot be undone.`;
-			modal.hidden = false;
+			openModal();
 		});
 	});
 
@@ -565,6 +628,28 @@ function initializeDeletePrompts() {
 	document.addEventListener('keydown', (event) => {
 		if (event.key === 'Escape' && !modal.hidden) {
 			closeModal();
+			return;
+		}
+
+		if (event.key !== 'Tab' || modal.hidden) {
+			return;
+		}
+
+		const focusable = getFocusable();
+		if (!focusable.length) {
+			event.preventDefault();
+			return;
+		}
+
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+
+		if (event.shiftKey && document.activeElement === first) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first.focus();
 		}
 	});
 }

@@ -14,9 +14,9 @@
             <h2 class="text-lg font-bold text-white">Reading Tools</h2>
             <p class="mt-2 text-sm text-cyan-100/85">Tune readability instantly while you explore this answer.</p>
             <div class="mt-4 flex flex-wrap gap-2">
-                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="small">A-</button>
-                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="normal">A</button>
-                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="large">A+</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="small" aria-label="Set text size to small">A-</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="normal" aria-label="Set text size to normal">A</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="large" aria-label="Set text size to large">A+</button>
             </div>
         </div>
     </section>
@@ -34,8 +34,10 @@
                 class="mt-6 h-72 w-full rounded-2xl object-cover sm:h-96"
             >
 
-            <div id="postContent" class="prose mt-6 max-w-none text-slate-700 prose-headings:text-slate-900 prose-a:text-cyan-700">
-                {!! nl2br(e($post->body)) !!}
+            <div class="bb-post-body mt-6">
+                <div id="postContent" class="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-cyan-700">
+                    {!! nl2br(e($post->body)) !!}
+                </div>
             </div>
 
             <div class="mt-6 flex flex-wrap items-center gap-3">

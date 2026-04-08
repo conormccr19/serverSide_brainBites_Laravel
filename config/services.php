@@ -36,8 +36,8 @@ return [
     ],
 
     'brainbot' => [
-        // Model name for OpenRouter (e.g. 'meta-llama-3-8b-instruct')
-        'model' => env('BRAINBOT_MODEL', 'meta-llama-3-8b-instruct'),
+        // Model name for OpenRouter (e.g. 'qwen/qwen3.6-plus')
+        'model' => env('BRAINBOT_MODEL', 'qwen/qwen3.6-plus'),
         // OpenRouter API endpoint and key
         'openrouter_url' => env('BRAINBOT_OPENROUTER_URL', 'https://openrouter.ai/api/v1/chat/completions'),
         'openrouter_key' => env('BRAINBOT_OPENROUTER_KEY'),

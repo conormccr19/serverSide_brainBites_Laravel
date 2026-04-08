@@ -16,11 +16,13 @@ class BrainBotService
         $sources = $this->searchWeb($question);
         $context = $this->buildContext($sources);
 
-        // Only use OpenRouter
+        // Prefer OpenRouter; if unavailable, return a safe fallback summary.
         $answer = $this->askOpenRouter($question, $context);
-        if (!$answer) {
-            $answer = $this->fallbackAnswer($sources);
+        if ($answer === null) {
+            $answer = "I am having trouble reaching the live model right now. Here is a web-based summary:\n\n"
+                .$this->fallbackAnswer($sources);
         }
+
         return [
             'answer' => $answer,
             'sources' => $sources,
@@ -87,10 +89,14 @@ class BrainBotService
                 ]);
 
                 if (str_contains(strtolower($errorMessage), 'guardrail restrictions and data policy')) {
-                    return 'OpenRouter blocked this model because of your privacy policy settings. Open OpenRouter Settings -> Privacy and relax restrictions (or allow more providers), then try again.';
+                    return null;
                 }
 
-                return 'OpenRouter request failed: '.trim($errorMessage);
+                if (str_contains(strtolower($errorMessage), 'deprecated')) {
+                    return null;
+                }
+
+                return null;
             }
 
             $choices = $response->json('choices');
