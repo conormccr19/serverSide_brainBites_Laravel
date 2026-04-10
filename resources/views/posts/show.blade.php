@@ -41,13 +41,14 @@
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="small" aria-pressed="false" aria-label="Set text size to small">A-</button>
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="normal" aria-pressed="true" aria-label="Set text size to normal">A</button>
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="large" aria-pressed="false" aria-label="Set text size to large">A+</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" id="readingModeToggle" aria-pressed="false" aria-label="Toggle reading mode">Reading mode</button>
             </div>
             <p class="mt-3 text-xs text-cyan-100/90">{{ $post->reading_time_minutes }} min read</p>
         </div>
     </section>
 
-    <article class="mb-8 grid gap-8 lg:grid-cols-3">
-        <div class="lg:col-span-2">
+    <article id="postReadingLayout" class="mb-8 grid gap-8 lg:grid-cols-3">
+        <div id="postPrimaryColumn" class="lg:col-span-2">
             <div class="mb-4 flex items-center gap-3">
                 <span class="{{ $post->category_badge_class }}">{{ $post->category->name }}</span>
                 <span class="text-xs text-slate-700">By {{ $post->user->name }}</span>
@@ -119,7 +120,7 @@
             </div>
         </div>
 
-        <aside class="space-y-4">
+        <aside id="postSidebar" class="space-y-4">
             @if ($tocSections->isNotEmpty())
                 <div class="bb-card">
                     <h2 class="text-lg font-bold text-slate-900">Table of Contents</h2>
@@ -195,4 +196,115 @@
             </section>
         </aside>
     </article>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const readingToggle = document.getElementById('readingModeToggle');
+            const content = document.getElementById('postContent');
+
+            if (readingToggle && readingToggle.dataset.readingModeBound !== 'true') {
+                readingToggle.dataset.readingModeBound = 'true';
+
+                const key = 'bb-reading-mode';
+                const setMode = (enabled) => {
+                    document.body.classList.toggle('bb-reading-mode', enabled);
+                    readingToggle.setAttribute('aria-pressed', String(enabled));
+                    readingToggle.textContent = enabled ? 'Exit reading mode' : 'Reading mode';
+                    localStorage.setItem(key, enabled ? 'on' : 'off');
+                };
+
+                setMode(localStorage.getItem(key) === 'on');
+
+                readingToggle.addEventListener('click', () => {
+                    setMode(!document.body.classList.contains('bb-reading-mode'));
+                });
+            }
+
+            if (!content || content.dataset.glossaryBound === 'true') {
+                return;
+            }
+
+            content.dataset.glossaryBound = 'true';
+
+            const terms = {
+                api: 'An API is a defined way for software systems to communicate and exchange data.',
+                algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
+                closure: 'A function that keeps access to variables from its outer scope, even after that scope finishes.',
+                cache: 'A temporary storage layer that keeps frequently used data for faster access.',
+                database: 'An organized system for storing and querying structured information.',
+                authentication: 'The process of verifying who a user is before granting access.',
+                encryption: 'A method that transforms readable data into unreadable form to protect it.',
+            };
+
+            const dictionary = new Map(Object.entries(terms).map(([term, def]) => [term.toLowerCase(), def]));
+            const keys = [...dictionary.keys()];
+
+            if (!keys.length) {
+                return;
+            }
+
+            const escaped = keys.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+            const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+            const textNodes = [];
+
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                const parent = node.parentElement;
+                if (!parent) continue;
+
+                if (parent.closest('a, code, pre, script, style, .bb-glossary-term')) {
+                    continue;
+                }
+
+                regex.lastIndex = 0;
+                if (regex.test(node.nodeValue || '')) {
+                    textNodes.push(node);
+                }
+            }
+
+            textNodes.forEach((node) => {
+                const text = node.nodeValue || '';
+                regex.lastIndex = 0;
+                if (!regex.test(text)) {
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                regex.lastIndex = 0;
+
+                for (const match of text.matchAll(regex)) {
+                    const start = match.index ?? 0;
+                    const end = start + match[0].length;
+
+                    if (start > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+                    }
+
+                    const key = match[0].toLowerCase();
+                    const definition = dictionary.get(key) || '';
+
+                    const term = document.createElement('span');
+                    term.className = 'bb-glossary-term';
+                    term.tabIndex = 0;
+                    term.textContent = match[0];
+
+                    const tip = document.createElement('span');
+                    tip.className = 'bb-glossary-tip';
+                    tip.textContent = definition;
+                    term.appendChild(tip);
+
+                    fragment.appendChild(term);
+                    lastIndex = end;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+                }
+
+                node.parentNode?.replaceChild(fragment, node);
+            });
+        });
+    </script>
 @endsection

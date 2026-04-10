@@ -555,6 +555,70 @@
 	.bb-toc-link {
 		@apply block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50;
 	}
+
+	.bb-glossary-term {
+		position: relative;
+		border-bottom: 1px dotted rgba(14, 116, 144, 0.75);
+		cursor: help;
+	}
+
+	.bb-glossary-term:focus {
+		outline: 2px solid rgba(34, 211, 238, 0.65);
+		outline-offset: 2px;
+		border-radius: 0.25rem;
+	}
+
+	.bb-glossary-tip {
+		position: absolute;
+		left: 50%;
+		bottom: calc(100% + 10px);
+		transform: translateX(-50%);
+		min-width: 220px;
+		max-width: 320px;
+		background: rgba(2, 6, 23, 0.94);
+		color: #e2e8f0;
+		border: 1px solid rgba(148, 163, 184, 0.35);
+		border-radius: 0.65rem;
+		padding: 0.55rem 0.65rem;
+		font-size: 0.76rem;
+		line-height: 1.35;
+		box-shadow: 0 16px 26px rgba(15, 23, 42, 0.32);
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition: opacity 140ms ease;
+		z-index: 30;
+	}
+
+	.bb-glossary-term:hover .bb-glossary-tip,
+	.bb-glossary-term:focus .bb-glossary-tip,
+	.bb-glossary-term:focus-within .bb-glossary-tip {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	body.bb-reading-mode #postSidebar {
+		display: none;
+	}
+
+	body.bb-reading-mode #postReadingLayout {
+		display: block;
+	}
+
+	body.bb-reading-mode #postPrimaryColumn {
+		max-width: 76ch;
+		margin: 0 auto;
+	}
+
+	body.bb-reading-mode .bb-cosmic-banner {
+		padding-top: 1.1rem;
+		padding-bottom: 1.1rem;
+	}
+
+	body.bb-reading-mode #postContent {
+		font-size: 1.14rem;
+		line-height: 1.95;
+	}
 }
 
 @keyframes bbFloat {

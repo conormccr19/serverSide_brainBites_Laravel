@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeRecentViews();
 	initializeDraftAutosave();
 	initializeActionFeedback();
+	initializeReadingModeToggle();
+	initializeInlineGlossary();
 
 	const counterInputs = document.querySelectorAll('[data-counter-target]');
 
@@ -631,6 +633,114 @@ function initializeActionFeedback() {
 				submitter.classList.add('bb-action-pulse');
 			}
 		});
+	});
+}
+
+function initializeReadingModeToggle() {
+	const toggle = document.getElementById('readingModeToggle');
+	if (!toggle) return;
+
+	if (toggle.dataset.readingModeBound === 'true') {
+		return;
+	}
+
+	toggle.dataset.readingModeBound = 'true';
+
+	const key = 'bb-reading-mode';
+
+	const setMode = (enabled) => {
+		document.body.classList.toggle('bb-reading-mode', enabled);
+		toggle.setAttribute('aria-pressed', String(enabled));
+		toggle.textContent = enabled ? 'Exit reading mode' : 'Reading mode';
+		localStorage.setItem(key, enabled ? 'on' : 'off');
+	};
+
+	setMode(localStorage.getItem(key) === 'on');
+
+	toggle.addEventListener('click', () => {
+		setMode(!document.body.classList.contains('bb-reading-mode'));
+	});
+}
+
+function initializeInlineGlossary() {
+	const content = document.getElementById('postContent');
+	if (!content) return;
+
+	const terms = {
+		api: 'An API is a defined way for software systems to communicate and exchange data.',
+		algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
+		closure: 'A function that keeps access to variables from its outer scope, even after that scope finishes.',
+		cache: 'A temporary storage layer that keeps frequently used data for faster access.',
+		database: 'An organized system for storing and querying structured information.',
+		authentication: 'The process of verifying who a user is before granting access.',
+		encryption: 'A method that transforms readable data into unreadable form to protect it.',
+	};
+
+	const dictionary = new Map(Object.entries(terms).map(([term, def]) => [term.toLowerCase(), def]));
+	const keys = [...dictionary.keys()];
+	if (!keys.length) return;
+
+	const escaped = keys.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+	const regex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+
+	const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+	const textNodes = [];
+
+	while (walker.nextNode()) {
+		const node = walker.currentNode;
+		const parent = node.parentElement;
+		if (!parent) continue;
+
+		if (parent.closest('a, code, pre, script, style, .bb-glossary-term')) {
+			continue;
+		}
+
+		if (regex.test(node.nodeValue || '')) {
+			textNodes.push(node);
+		}
+	}
+
+	textNodes.forEach((node) => {
+		const text = node.nodeValue || '';
+		regex.lastIndex = 0;
+		if (!regex.test(text)) {
+			return;
+		}
+
+		const fragment = document.createDocumentFragment();
+		let lastIndex = 0;
+		regex.lastIndex = 0;
+
+		for (const match of text.matchAll(regex)) {
+			const start = match.index ?? 0;
+			const end = start + match[0].length;
+
+			if (start > lastIndex) {
+				fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+			}
+
+			const key = match[0].toLowerCase();
+			const definition = dictionary.get(key) || '';
+
+			const term = document.createElement('span');
+			term.className = 'bb-glossary-term';
+			term.tabIndex = 0;
+			term.textContent = match[0];
+
+			const tip = document.createElement('span');
+			tip.className = 'bb-glossary-tip';
+			tip.textContent = definition;
+			term.appendChild(tip);
+
+			fragment.appendChild(term);
+			lastIndex = end;
+		}
+
+		if (lastIndex < text.length) {
+			fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+		}
+
+		node.parentNode?.replaceChild(fragment, node);
 	});
 }
 
