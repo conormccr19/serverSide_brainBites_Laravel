@@ -68,6 +68,26 @@
         </article>
     </section>
 
+    <section class="mb-8 grid gap-5 lg:grid-cols-2">
+        <article class="bb-card" id="dashboardPinboard">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-slate-900">Key Takeaways Pinboard</h2>
+                <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">3 to 5 lines</span>
+            </div>
+            <div id="takeawaysList" class="mt-4 grid gap-3"></div>
+            <p id="takeawaysEmpty" class="mt-2 text-sm text-slate-600">Pin key lines from post paragraphs to build this board.</p>
+        </article>
+
+        <article class="bb-card" id="dashboardStreakSummary">
+            <h2 class="text-xl font-bold text-slate-900">Learning Momentum</h2>
+            <p id="dashboardStreakText" class="mt-3 text-sm font-semibold text-slate-700">Streak: 0 days</p>
+            <div class="mt-2 h-2 rounded-full bg-slate-200">
+                <div id="dashboardGoalBar" class="h-2 rounded-full bg-lime-500" style="width: 0%"></div>
+            </div>
+            <p id="dashboardGoalText" class="mt-2 text-xs text-slate-600">0 / 5 posts this week</p>
+        </article>
+    </section>
+
     <section class="bb-card overflow-x-auto">
         <h2 class="mb-4 text-xl font-bold text-slate-900">{{ $isAdminView ? 'All Posts' : 'Your Posts' }}</h2>
 

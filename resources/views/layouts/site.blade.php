@@ -35,6 +35,7 @@
                     <button type="button" data-theme-toggle class="bb-button-secondary">Dark mode</button>
                     <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
                     <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
+                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
                     <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
                     <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
 
@@ -66,6 +67,7 @@
                     <button type="button" data-theme-toggle class="bb-button-secondary justify-start">Dark mode</button>
                     <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
                     <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
+                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
                     <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
                     <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
 

@@ -104,6 +104,37 @@ class Post extends Model
         return max(1, (int) ceil($wordCount / 200));
     }
 
+    public function getDifficultyLevelAttribute(): string
+    {
+        $text = trim(strip_tags($this->body ?? ''));
+        if ($text === '') {
+            return 'Easy';
+        }
+
+        $sentences = max(1, preg_match_all('/[.!?]+/', $text));
+        $words = str_word_count($text);
+        $avgWordsPerSentence = $words / $sentences;
+
+        if ($avgWordsPerSentence >= 20 || $words >= 900) {
+            return 'Advanced';
+        }
+
+        if ($avgWordsPerSentence >= 14 || $words >= 450) {
+            return 'Medium';
+        }
+
+        return 'Easy';
+    }
+
+    public function getDifficultyBadgeClassAttribute(): string
+    {
+        return match ($this->difficulty_level) {
+            'Advanced' => 'bb-difficulty bb-difficulty-advanced',
+            'Medium' => 'bb-difficulty bb-difficulty-medium',
+            default => 'bb-difficulty bb-difficulty-easy',
+        };
+    }
+
     public function getCategoryBadgeClassAttribute(): string
     {
         $palette = [

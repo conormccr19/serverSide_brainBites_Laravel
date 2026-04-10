@@ -199,9 +199,29 @@ class PostController extends Controller
             ->take(3)
             ->get();
 
+        $compareCandidates = Post::query()
+            ->public()
+            ->with(['user', 'category'])
+            ->where('id', '!=', $post->id)
+            ->where('category_id', $post->category_id)
+            ->orderByDesc('published_at')
+            ->take(12)
+            ->get();
+
+        $compareSlug = trim((string) request()->query('compare'));
+        $comparePost = $compareSlug === ''
+            ? null
+            : $compareCandidates->first(fn (Post $candidate): bool => $candidate->slug === $compareSlug);
+
+        if ($comparePost) {
+            $comparePost->loadCount(['likes', 'comments']);
+        }
+
         return view('posts.show', [
             'post' => $post,
             'relatedPosts' => $relatedPosts,
+            'compareCandidates' => $compareCandidates,
+            'comparePost' => $comparePost,
         ]);
     }
 

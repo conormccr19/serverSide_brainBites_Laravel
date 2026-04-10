@@ -24,6 +24,7 @@
         data-title="{{ $post->title }}"
         data-url="{{ route('posts.show', $post) }}"
         data-category="{{ $post->category->name }}"
+        data-category-slug="{{ $post->category->slug }}"
         hidden
     ></div>
 
@@ -47,6 +48,12 @@
             </div>
             <p id="voiceReadStatus" class="mt-2 text-xs text-cyan-100/85" aria-live="polite">Voice reader ready.</p>
             <p class="mt-3 text-xs text-cyan-100/90">{{ $post->reading_time_minutes }} min read</p>
+            <p class="mt-1 text-xs text-cyan-100/90">Difficulty: <span class="{{ $post->difficulty_badge_class }}">{{ $post->difficulty_level }}</span></p>
+            <div class="mt-3 flex flex-wrap gap-2" id="translateTools" data-translate-url="{{ route('posts.show', $post) }}">
+                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="es">Translate ES</button>
+                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="fr">Translate FR</button>
+                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="de">Translate DE</button>
+            </div>
         </div>
     </section>
 
@@ -65,7 +72,7 @@
             >
 
             <div class="bb-post-body mt-6">
-                <div id="postContent" class="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-cyan-700">
+                <div id="postContent" class="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-cyan-700" data-post-title="{{ $post->title }}" data-post-category="{{ $post->category->name }}" data-post-category-slug="{{ $post->category->slug }}" data-post-url="{{ route('posts.show', $post) }}">
                     @foreach ($sections as $index => $chunk)
                         <p id="section-{{ $index + 1 }}" class="scroll-mt-24">{!! nl2br(e($chunk)) !!}</p>
                     @endforeach
@@ -144,6 +151,31 @@
                 <p class="mt-1 text-sm text-slate-700">Visibility: {{ $post->is_public ? 'Public' : 'Private draft' }}</p>
                 <p class="mt-1 text-sm text-slate-700">Category: {{ $post->category->name }}</p>
                 <p class="mt-1 text-sm text-slate-700">Estimated read: {{ $post->reading_time_minutes }} minutes</p>
+                <p class="mt-1 text-sm text-slate-700">Complexity: <span class="{{ $post->difficulty_badge_class }}">{{ $post->difficulty_level }}</span></p>
+            </div>
+
+            @if ($compareCandidates->isNotEmpty())
+                <div class="bb-card">
+                    <h2 class="text-lg font-bold text-slate-900">Compare Explanations</h2>
+                    <p class="mt-2 text-sm text-slate-600">Open another post from the same category side-by-side.</p>
+                    <form class="mt-3 grid gap-2" method="GET" action="{{ route('posts.show', $post) }}">
+                        <select name="compare" class="bb-select" aria-label="Select post to compare">
+                            <option value="">Choose a post...</option>
+                            @foreach ($compareCandidates as $candidate)
+                                <option value="{{ $candidate->slug }}" @selected(optional($comparePost)->slug === $candidate->slug)>{{ $candidate->title }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="bb-button-secondary">Compare now</button>
+                    </form>
+                </div>
+            @endif
+
+            <div class="bb-card" id="timelinePanel">
+                <h2 class="text-lg font-bold text-slate-900">Interactive Timeline</h2>
+                <p class="mt-2 text-sm text-slate-600">Auto-generated from headings and sequence cues.</p>
+                <div id="timelineBlocks" class="mt-3 grid gap-2">
+                    <p class="text-sm text-slate-500">Timeline will appear when sequence/date cues are detected.</p>
+                </div>
             </div>
 
             @if ($relatedPosts->isNotEmpty())
@@ -200,123 +232,71 @@
         </aside>
     </article>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const readingToggle = document.getElementById('readingModeToggle');
-            const content = document.getElementById('postContent');
+    @if ($comparePost)
+        <section class="bb-card mb-8">
+            <h2 class="text-xl font-bold text-slate-900">Side-by-side Comparison</h2>
+            <p class="mt-2 text-sm text-slate-600">Current post vs selected post from {{ $post->category->name }}.</p>
+            <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                <article class="rounded-xl border border-slate-200 bg-white p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Current</p>
+                    <h3 class="mt-1 text-lg font-semibold text-slate-900">{{ $post->title }}</h3>
+                    <p class="mt-2 text-sm text-slate-700">{{ $post->summary }}</p>
+                    <p class="mt-3 text-xs text-slate-500">{{ $post->reading_time_minutes }} min • {{ $post->difficulty_level }}</p>
+                </article>
+                <article class="rounded-xl border border-slate-200 bg-white p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Comparison</p>
+                    <h3 class="mt-1 text-lg font-semibold text-slate-900">{{ $comparePost->title }}</h3>
+                    <p class="mt-2 text-sm text-slate-700">{{ $comparePost->summary }}</p>
+                    <p class="mt-3 text-xs text-slate-500">{{ $comparePost->reading_time_minutes }} min • {{ $comparePost->difficulty_level }}</p>
+                    <a href="{{ route('posts.show', $comparePost) }}" class="mt-3 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800">Open full comparison post</a>
+                </article>
+            </div>
+        </section>
+    @endif
 
-            if (readingToggle && readingToggle.dataset.readingModeBound !== 'true') {
-                readingToggle.dataset.readingModeBound = 'true';
+    <section class="bb-card mb-8" id="flashcardsPanel">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Study Flashcards from Post</h2>
+                <p class="mt-1 text-sm text-slate-600">Generate quick Q/A cards and save this deck by category.</p>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" class="bb-button-secondary" id="generateFlashcards">Generate cards</button>
+                <button type="button" class="bb-button-secondary" id="saveFlashcards" disabled>Save deck</button>
+            </div>
+        </div>
+        <div id="flashcardsDeck" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
+    </section>
 
-                const key = 'bb-reading-mode';
-                const sidebar = document.getElementById('postSidebar');
-                const setMode = (enabled) => {
-                    document.body.classList.toggle('bb-reading-mode', enabled);
-                    if (sidebar instanceof HTMLElement) {
-                        sidebar.hidden = enabled;
-                    }
-                    readingToggle.setAttribute('aria-pressed', String(enabled));
-                    readingToggle.textContent = enabled ? 'Exit reading mode' : 'Reading mode';
-                    localStorage.setItem(key, enabled ? 'on' : 'off');
-                };
+    <section class="bb-card mb-8" id="revisionPanel">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">One-click Revision Mode</h2>
+                <p class="mt-1 text-sm text-slate-600">Convert this post into bullets, exam questions, or a cheat sheet.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="bb-button-secondary" data-revision-mode="bullets">Bullets</button>
+                <button type="button" class="bb-button-secondary" data-revision-mode="questions">Exam questions</button>
+                <button type="button" class="bb-button-secondary" data-revision-mode="cheat">Cheat sheet</button>
+            </div>
+        </div>
+        <div id="revisionOutput" class="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+            Pick a mode to generate a revision view.
+        </div>
+    </section>
 
-                setMode(localStorage.getItem(key) === 'on');
+    <section class="bb-card" id="postFeedbackPanel" data-feedback-key="post-feedback-{{ $post->id }}">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Was this post helpful?</h2>
+                <p class="mt-1 text-sm text-slate-600">Your quick feedback helps improve what shows up first.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="bb-button-secondary" data-feedback="yes" aria-label="This post was helpful">Yes</button>
+                <button type="button" class="bb-button-secondary" data-feedback="no" aria-label="This post was not helpful">No</button>
+            </div>
+        </div>
+        <p id="postFeedbackStatus" class="mt-3 text-sm text-slate-600" aria-live="polite">No feedback submitted yet.</p>
+    </section>
 
-                readingToggle.addEventListener('click', () => {
-                    setMode(!document.body.classList.contains('bb-reading-mode'));
-                });
-            }
-
-            if (!content || content.dataset.glossaryBound === 'true') {
-                return;
-            }
-
-            content.dataset.glossaryBound = 'true';
-
-            const terms = {
-                api: 'An API is a defined way for software systems to communicate and exchange data.',
-                algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
-                app: 'An app is a software application designed to perform specific tasks for users.',
-                closure: 'A function that keeps access to variables from its outer scope, even after that scope finishes.',
-                cache: 'A temporary storage layer that keeps frequently used data for faster access.',
-                server: 'A server is a system that provides data or services to other systems over a network.',
-                function: 'A function is a reusable block of code that performs a specific task.',
-                model: 'A model is a simplified representation used to explain, predict, or structure data and behavior.',
-                data: 'Data is information that can be stored, processed, and analyzed.',
-                database: 'An organized system for storing and querying structured information.',
-                authentication: 'The process of verifying who a user is before granting access.',
-                encryption: 'A method that transforms readable data into unreadable form to protect it.',
-            };
-
-            const dictionary = new Map(Object.entries(terms).map(([term, def]) => [term.toLowerCase(), def]));
-            const keys = [...dictionary.keys()];
-
-            if (!keys.length) {
-                return;
-            }
-
-            const escaped = keys.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            const regex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
-            const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
-            const textNodes = [];
-
-            while (walker.nextNode()) {
-                const node = walker.currentNode;
-                const parent = node.parentElement;
-                if (!parent) continue;
-
-                if (parent.closest('a, code, pre, script, style, .bb-glossary-term')) {
-                    continue;
-                }
-
-                regex.lastIndex = 0;
-                if (regex.test(node.nodeValue || '')) {
-                    textNodes.push(node);
-                }
-            }
-
-            textNodes.forEach((node) => {
-                const text = node.nodeValue || '';
-                regex.lastIndex = 0;
-                if (!regex.test(text)) {
-                    return;
-                }
-
-                const fragment = document.createDocumentFragment();
-                let lastIndex = 0;
-                regex.lastIndex = 0;
-
-                for (const match of text.matchAll(regex)) {
-                    const start = match.index ?? 0;
-                    const end = start + match[0].length;
-
-                    if (start > lastIndex) {
-                        fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
-                    }
-
-                    const key = match[0].toLowerCase();
-                    const definition = dictionary.get(key) || '';
-
-                    const term = document.createElement('span');
-                    term.className = 'bb-glossary-term';
-                    term.tabIndex = 0;
-                    term.textContent = match[0];
-
-                    const tip = document.createElement('span');
-                    tip.className = 'bb-glossary-tip';
-                    tip.textContent = definition;
-                    term.appendChild(tip);
-
-                    fragment.appendChild(term);
-                    lastIndex = end;
-                }
-
-                if (lastIndex < text.length) {
-                    fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-                }
-
-                node.parentNode?.replaceChild(fragment, node);
-            });
-        });
-    </script>
 @endsection

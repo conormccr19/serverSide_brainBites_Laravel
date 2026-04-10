@@ -25,6 +25,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeReadingModeToggle();
 	initializeInlineGlossary();
 	initializeVoiceReader();
+	initializePostFeedbackPoll();
+	initializeParagraphBrainBot();
+	initializeFlashcards();
+	initializeTimelineBlocks();
+	initializeTranslatePost();
+	initializeGlossaryPage();
+	initializeRevisionMode();
+	initializeReadingStreakWidgets();
+	initializeDashboardPinboard();
+
+	document.body.classList.remove('bb-calm-focus');
+	localStorage.removeItem('bb-calm-focus');
 
 	const counterInputs = document.querySelectorAll('[data-counter-target]');
 
@@ -273,6 +285,39 @@ function initializeBrainBot() {
 		bubble.textContent = text;
 		messages.appendChild(bubble);
 		messages.scrollTop = messages.scrollHeight;
+		return bubble;
+	};
+
+	const addFollowups = (anchor, question, answer) => {
+		if (!(anchor instanceof HTMLElement)) return;
+
+		const topic = (question || answer || '').split(/[.!?]/)[0]?.slice(0, 70)?.trim() || 'this topic';
+		const suggestions = [
+			`Can you explain ${topic} in simpler words?`,
+			`Give me one real-world example of ${topic}.`,
+			`Quiz me on ${topic} with 3 questions.`,
+		];
+
+		const wrap = document.createElement('div');
+		wrap.className = 'bb-followup-wrap';
+		const title = document.createElement('p');
+		title.className = 'bb-followup-title';
+		title.textContent = 'Suggested follow-ups';
+		wrap.appendChild(title);
+
+		suggestions.forEach((suggestion) => {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'bb-followup-chip';
+			button.textContent = suggestion;
+			button.addEventListener('click', () => {
+				input.value = suggestion;
+				input.focus();
+			});
+			wrap.appendChild(button);
+		});
+
+		anchor.appendChild(wrap);
 	};
 
 	const addHistoryPair = (question, answer) => {
@@ -280,7 +325,8 @@ function initializeBrainBot() {
 			addMessage(question, 'user');
 		}
 		if (answer) {
-			addMessage(answer, 'bot');
+			const bubble = addMessage(answer, 'bot');
+			addFollowups(bubble, question, answer);
 		}
 	};
 
@@ -374,7 +420,9 @@ function initializeBrainBot() {
 				return;
 			}
 
-			addMessage(data.answer || 'I could not generate an answer yet.', 'bot');
+			const answer = data.answer || 'I could not generate an answer yet.';
+			const bubble = addMessage(answer, 'bot');
+			addFollowups(bubble, message, answer);
 
 			if (Array.isArray(data.sources) && data.sources.length) {
 				const sourceList = data.sources.slice(0, 3)
@@ -671,6 +719,12 @@ function initializeInlineGlossary() {
 	const content = document.getElementById('postContent');
 	if (!content) return;
 
+	if (content.dataset.glossaryBound === 'true') {
+		return;
+	}
+
+	content.dataset.glossaryBound = 'true';
+
 	const terms = {
 		api: 'An API is a defined way for software systems to communicate and exchange data.',
 		algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
@@ -737,6 +791,7 @@ function initializeInlineGlossary() {
 			term.className = 'bb-glossary-term';
 			term.tabIndex = 0;
 			term.textContent = match[0];
+			term.setAttribute('data-glossary-term', match[0]);
 
 			const tip = document.createElement('span');
 			tip.className = 'bb-glossary-tip';
@@ -753,6 +808,455 @@ function initializeInlineGlossary() {
 
 		node.parentNode?.replaceChild(fragment, node);
 	});
+
+	const glossaryStorageKey = 'bb-learned-terms';
+	content.querySelectorAll('[data-glossary-term]').forEach((termElement) => {
+		if (!(termElement instanceof HTMLElement)) return;
+
+		termElement.addEventListener('click', () => {
+			const term = (termElement.getAttribute('data-glossary-term') || '').trim();
+			const definition = termElement.querySelector('.bb-glossary-tip')?.textContent || '';
+			if (!term || !definition) return;
+
+			let list = [];
+			try {
+				list = JSON.parse(localStorage.getItem(glossaryStorageKey) || '[]');
+			} catch {
+				list = [];
+			}
+
+			const normalized = String(term).toLowerCase();
+			const next = Array.isArray(list) ? list.filter((item) => String(item.term || '').toLowerCase() !== normalized) : [];
+			next.unshift({
+				term,
+				definition,
+				saved_at: new Date().toISOString(),
+			});
+
+			localStorage.setItem(glossaryStorageKey, JSON.stringify(next.slice(0, 80)));
+			showToast(`Saved term: ${term}`);
+		});
+	});
+}
+
+function initializeParagraphBrainBot() {
+	const content = document.getElementById('postContent');
+	const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+	if (!content || !csrfToken) return;
+
+	const paragraphs = [...content.querySelectorAll('p')];
+	if (!paragraphs.length) return;
+
+	paragraphs.forEach((paragraph) => {
+		if (!(paragraph instanceof HTMLElement) || paragraph.dataset.askBound === 'true') {
+			return;
+		}
+
+		paragraph.dataset.askBound = 'true';
+
+		const controls = document.createElement('div');
+		controls.className = 'bb-inline-tools';
+
+		const ask = document.createElement('button');
+		ask.type = 'button';
+		ask.className = 'bb-inline-chip';
+		ask.textContent = 'Explain this simpler';
+
+		const pin = document.createElement('button');
+		pin.type = 'button';
+		pin.className = 'bb-inline-chip';
+		pin.textContent = 'Pin takeaway';
+
+		const output = document.createElement('div');
+		output.className = 'bb-inline-answer';
+		output.hidden = true;
+
+		ask.addEventListener('click', async () => {
+			const contextText = (paragraph.textContent || '').trim();
+			if (!contextText) return;
+
+			ask.disabled = true;
+			output.hidden = false;
+			output.textContent = 'Asking brainBot...';
+
+			try {
+				const response = await fetch('/brainbot/chat', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': csrfToken,
+						'Accept': 'application/json',
+					},
+					body: JSON.stringify({
+						message: `Explain this paragraph in simpler words:\n\n${contextText}`,
+					}),
+				});
+
+				const data = await response.json();
+				if (!response.ok) {
+					output.textContent = 'Could not fetch simplified explanation right now.';
+					return;
+				}
+
+				output.textContent = data.answer || 'No explanation returned.';
+			} catch {
+				output.textContent = 'Could not reach brainBot right now.';
+			} finally {
+				ask.disabled = false;
+			}
+		});
+
+		pin.addEventListener('click', () => {
+			const text = (paragraph.textContent || '').trim();
+			if (!text) return;
+
+			const marker = document.querySelector('[data-recent-view-post]');
+			const title = marker?.getAttribute('data-title') || 'Post';
+			const url = marker?.getAttribute('data-url') || window.location.href;
+
+			let saved = [];
+			try {
+				saved = JSON.parse(localStorage.getItem('bb-takeaways') || '[]');
+			} catch {
+				saved = [];
+			}
+
+			const next = Array.isArray(saved)
+				? saved.filter((item) => !(item.text === text && item.url === url))
+				: [];
+
+			next.unshift({ text, title, url, created_at: new Date().toISOString() });
+			localStorage.setItem('bb-takeaways', JSON.stringify(next.slice(0, 5)));
+			showToast('Pinned to key takeaways.');
+		});
+
+		controls.appendChild(ask);
+		controls.appendChild(pin);
+		paragraph.insertAdjacentElement('afterend', controls);
+		controls.insertAdjacentElement('afterend', output);
+	});
+}
+
+function initializeFlashcards() {
+	const panel = document.getElementById('flashcardsPanel');
+	const deck = document.getElementById('flashcardsDeck');
+	const generate = document.getElementById('generateFlashcards');
+	const save = document.getElementById('saveFlashcards');
+	const content = document.getElementById('postContent');
+	if (!panel || !deck || !generate || !save || !content) return;
+
+	const categorySlug = content.getAttribute('data-post-category-slug') || 'general';
+	const storageKey = `bb-flashcards-${categorySlug}`;
+	let currentCards = [];
+
+	const render = (cards) => {
+		if (!cards.length) {
+			deck.innerHTML = '<p class="text-sm text-slate-600">Generate cards to start studying.</p>';
+			save.disabled = true;
+			return;
+		}
+
+		deck.innerHTML = cards.map((card, index) => (
+			`<article class="bb-flashcard" data-flip-card><p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Card ${index + 1}</p><p class="mt-2 text-sm font-semibold text-slate-900">Q: ${escapeHtml(card.q)}</p><p class="mt-2 text-sm text-slate-700">A: ${escapeHtml(card.a)}</p></article>`
+		)).join('');
+		save.disabled = false;
+	};
+
+	const paragraphs = () => [...content.querySelectorAll('p')]
+		.map((p) => (p.textContent || '').trim())
+		.filter(Boolean);
+
+	const createCards = () => {
+		const lines = paragraphs().slice(0, 6);
+		return lines.map((line, index) => {
+			const words = line.split(/\s+/).filter(Boolean);
+			const topic = words.slice(0, 7).join(' ');
+			return {
+				q: `What is the key idea in part ${index + 1}: "${topic}"?`,
+				a: line,
+			};
+		});
+	};
+
+	generate.addEventListener('click', () => {
+		currentCards = createCards();
+		render(currentCards);
+		showToast('Flashcards generated.');
+	});
+
+	save.addEventListener('click', () => {
+		if (!currentCards.length) return;
+		localStorage.setItem(storageKey, JSON.stringify(currentCards));
+		showToast('Flashcard deck saved for this category.');
+	});
+
+	try {
+		const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+		if (Array.isArray(existing) && existing.length) {
+			currentCards = existing;
+			render(currentCards);
+		}
+	} catch {
+		render([]);
+	}
+}
+
+function initializeTimelineBlocks() {
+	const panel = document.getElementById('timelineBlocks');
+	const content = document.getElementById('postContent');
+	if (!panel || !content) return;
+
+	const lines = [...content.querySelectorAll('p')].map((p) => (p.textContent || '').trim()).filter(Boolean);
+	const timeline = lines
+		.map((line, index) => {
+			const year = line.match(/\b(1[6-9]\d{2}|20\d{2}|21\d{2})\b/)?.[0] || null;
+			const step = line.match(/\b(step\s*\d+|phase\s*\d+|first|second|third|finally)\b/i)?.[0] || null;
+			if (!year && !step) return null;
+			return {
+				label: year || String(step).replace(/\b\w/g, (c) => c.toUpperCase()),
+				text: line,
+				order: index,
+			};
+		})
+		.filter(Boolean)
+		.slice(0, 8);
+
+	if (!timeline.length) {
+		return;
+	}
+
+	panel.innerHTML = timeline.map((item) => (
+		`<article class="bb-timeline-item"><p class="bb-timeline-label">${escapeHtml(item.label)}</p><p class="text-sm text-slate-700">${escapeHtml(item.text)}</p></article>`
+	)).join('');
+}
+
+function initializeTranslatePost() {
+	const tools = document.getElementById('translateTools');
+	if (!tools) return;
+
+	const targetUrl = tools.getAttribute('data-translate-url') || window.location.href;
+	tools.querySelectorAll('[data-translate-lang]').forEach((button) => {
+		button.addEventListener('click', () => {
+			const lang = button.getAttribute('data-translate-lang') || 'en';
+			const url = `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(lang)}&u=${encodeURIComponent(targetUrl)}`;
+			window.open(url, '_blank', 'noopener,noreferrer');
+		});
+	});
+}
+
+function initializeGlossaryPage() {
+	const list = document.getElementById('learnedTermsList');
+	const empty = document.getElementById('learnedTermsEmpty');
+	const clear = document.getElementById('clearLearnedTerms');
+	if (!list || !empty || !clear) return;
+
+	const key = 'bb-learned-terms';
+
+	const render = () => {
+		let items = [];
+		try {
+			items = JSON.parse(localStorage.getItem(key) || '[]');
+		} catch {
+			items = [];
+		}
+
+		if (!Array.isArray(items) || !items.length) {
+			list.innerHTML = '';
+			empty.hidden = false;
+			return;
+		}
+
+		empty.hidden = true;
+		list.innerHTML = items.slice(0, 60).map((item) => (
+			`<article class="rounded-xl border border-slate-200 bg-white p-3"><p class="text-sm font-semibold text-slate-900">${escapeHtml(item.term || '')}</p><p class="mt-1 text-xs text-slate-600">${escapeHtml(item.definition || '')}</p></article>`
+		)).join('');
+	};
+
+	clear.addEventListener('click', () => {
+		localStorage.removeItem(key);
+		render();
+		showToast('Learned terms cleared.');
+	});
+
+	render();
+}
+
+function initializeRevisionMode() {
+	const output = document.getElementById('revisionOutput');
+	const content = document.getElementById('postContent');
+	const buttons = [...document.querySelectorAll('[data-revision-mode]')];
+	if (!output || !content || !buttons.length) return;
+
+	const lines = [...content.querySelectorAll('p')]
+		.map((p) => (p.textContent || '').trim())
+		.filter(Boolean)
+		.slice(0, 8);
+
+	const setBullets = () => {
+		output.innerHTML = `<ul class="list-disc pl-5">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+	};
+
+	const setQuestions = () => {
+		output.innerHTML = lines.map((line, index) => {
+			const stem = line.split(/[,.]/)[0] || line;
+			return `<p class="mb-2"><strong>Q${index + 1}.</strong> Explain: ${escapeHtml(stem)}?</p>`;
+		}).join('');
+	};
+
+	const setCheat = () => {
+		output.innerHTML = lines.map((line, index) => `<p class="mb-2"><strong>${index + 1}.</strong> ${escapeHtml(line.slice(0, 180))}</p>`).join('');
+	};
+
+	buttons.forEach((button) => {
+		button.addEventListener('click', () => {
+			const mode = button.getAttribute('data-revision-mode');
+			if (mode === 'bullets') {
+				setBullets();
+			} else if (mode === 'questions') {
+				setQuestions();
+			} else {
+				setCheat();
+			}
+		});
+	});
+}
+
+function initializeReadingStreakWidgets() {
+	const marker = document.querySelector('[data-recent-view-post]');
+	const key = 'bb-reading-activity';
+
+	let activity = { dates: [], weeklyGoal: 5 };
+	try {
+		const raw = JSON.parse(localStorage.getItem(key) || '{}');
+		activity = {
+			dates: Array.isArray(raw.dates) ? raw.dates : [],
+			weeklyGoal: Number(raw.weeklyGoal) > 0 ? Number(raw.weeklyGoal) : 5,
+		};
+	} catch {
+		activity = { dates: [], weeklyGoal: 5 };
+	}
+
+	if (marker) {
+		const today = new Date().toISOString().slice(0, 10);
+		if (!activity.dates.includes(today)) {
+			activity.dates.unshift(today);
+			activity.dates = activity.dates.slice(0, 180);
+		}
+	}
+
+	const streak = computeStreak(activity.dates);
+	const weekCount = countThisWeek(activity.dates);
+
+	const weeklyInput = document.getElementById('weeklyGoalInput');
+	const streakText = document.getElementById('streakText');
+	const weeklyGoalText = document.getElementById('weeklyGoalText');
+	const weeklyGoalBar = document.getElementById('weeklyGoalBar');
+	const dashboardStreakText = document.getElementById('dashboardStreakText');
+	const dashboardGoalText = document.getElementById('dashboardGoalText');
+	const dashboardGoalBar = document.getElementById('dashboardGoalBar');
+
+	const render = () => {
+		const pct = Math.max(0, Math.min(100, Math.round((weekCount / activity.weeklyGoal) * 100)));
+		if (streakText) streakText.textContent = `Streak: ${streak} day${streak === 1 ? '' : 's'}`;
+		if (weeklyGoalText) weeklyGoalText.textContent = `${weekCount} / ${activity.weeklyGoal} posts this week`;
+		if (weeklyGoalBar) weeklyGoalBar.style.width = `${pct}%`;
+		if (dashboardStreakText) dashboardStreakText.textContent = `Streak: ${streak} day${streak === 1 ? '' : 's'}`;
+		if (dashboardGoalText) dashboardGoalText.textContent = `${weekCount} / ${activity.weeklyGoal} posts this week`;
+		if (dashboardGoalBar) dashboardGoalBar.style.width = `${pct}%`;
+	};
+
+	if (weeklyInput) {
+		weeklyInput.value = String(activity.weeklyGoal);
+		weeklyInput.addEventListener('change', () => {
+			const goal = Math.max(1, Math.min(21, Number(weeklyInput.value) || 5));
+			activity.weeklyGoal = goal;
+			localStorage.setItem(key, JSON.stringify(activity));
+			render();
+		});
+	}
+
+	localStorage.setItem(key, JSON.stringify(activity));
+	render();
+}
+
+function initializeDashboardPinboard() {
+	const list = document.getElementById('takeawaysList');
+	const empty = document.getElementById('takeawaysEmpty');
+	if (!list || !empty) return;
+
+	let items = [];
+	try {
+		items = JSON.parse(localStorage.getItem('bb-takeaways') || '[]');
+	} catch {
+		items = [];
+	}
+
+	if (!Array.isArray(items) || !items.length) {
+		list.innerHTML = '';
+		empty.hidden = false;
+		return;
+	}
+
+	empty.hidden = true;
+	list.innerHTML = items.slice(0, 5).map((item) => (
+		`<article class="rounded-xl border border-slate-200 bg-white p-3"><p class="text-sm text-slate-700">${escapeHtml(item.text || '')}</p><a href="${escapeHtml(item.url || '#')}" class="mt-2 inline-flex text-xs font-semibold text-cyan-700 hover:text-cyan-800">From: ${escapeHtml(item.title || 'Post')}</a></article>`
+	)).join('');
+}
+
+function countThisWeek(dates) {
+	if (!Array.isArray(dates)) return 0;
+	const now = new Date();
+	const day = now.getDay();
+	const mondayOffset = day === 0 ? -6 : 1 - day;
+	const monday = new Date(now);
+	monday.setDate(now.getDate() + mondayOffset);
+	monday.setHours(0, 0, 0, 0);
+
+	return dates.reduce((count, value) => {
+		const date = new Date(`${value}T00:00:00`);
+		if (Number.isNaN(date.getTime())) return count;
+		return date >= monday ? count + 1 : count;
+	}, 0);
+}
+
+function computeStreak(dates) {
+	if (!Array.isArray(dates) || !dates.length) return 0;
+
+	const set = new Set(dates);
+	let streak = 0;
+	const cursor = new Date();
+
+	while (true) {
+		const key = cursor.toISOString().slice(0, 10);
+		if (set.has(key)) {
+			streak += 1;
+			cursor.setDate(cursor.getDate() - 1);
+			continue;
+		}
+
+		if (streak === 0) {
+			cursor.setDate(cursor.getDate() - 1);
+			const yesterday = cursor.toISOString().slice(0, 10);
+			if (set.has(yesterday)) {
+				streak = 1;
+				cursor.setDate(cursor.getDate() - 1);
+				continue;
+			}
+		}
+
+		break;
+	}
+
+	return streak;
+}
+
+function escapeHtml(value) {
+	return String(value)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
 }
 
 function initializeVoiceReader() {
@@ -899,6 +1403,45 @@ function initializeVoiceReader() {
 
 	window.addEventListener('beforeunload', () => {
 		synth.cancel();
+	});
+}
+
+function initializePostFeedbackPoll() {
+	const panel = document.getElementById('postFeedbackPanel');
+	const status = document.getElementById('postFeedbackStatus');
+	if (!panel || !status) return;
+
+	const buttons = [...panel.querySelectorAll('[data-feedback]')];
+	if (!buttons.length) return;
+
+	const key = panel.getAttribute('data-feedback-key') || '';
+	if (!key) return;
+
+	const render = (value) => {
+		buttons.forEach((button) => {
+			button.classList.toggle('bb-feedback-selected', button.getAttribute('data-feedback') === value);
+		});
+
+		if (value === 'yes') {
+			status.textContent = 'Thanks. Marked as helpful.';
+		} else if (value === 'no') {
+			status.textContent = 'Thanks. Marked as not helpful.';
+		} else {
+			status.textContent = 'No feedback submitted yet.';
+		}
+	};
+
+	render(localStorage.getItem(key));
+
+	buttons.forEach((button) => {
+		button.addEventListener('click', () => {
+			const value = button.getAttribute('data-feedback');
+			if (!value) return;
+
+			localStorage.setItem(key, value);
+			render(value);
+			showToast(value === 'yes' ? 'Feedback saved: helpful.' : 'Feedback saved: not helpful.');
+		});
 	});
 }
 

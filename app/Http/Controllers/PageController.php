@@ -19,6 +19,11 @@ class PageController extends Controller
         return view('pages.about');
     }
 
+    public function glossary(): View
+    {
+        return view('pages.glossary');
+    }
+
     public function contact(): View
     {
         return view('pages.contact');

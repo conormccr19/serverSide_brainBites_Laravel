@@ -170,11 +170,34 @@
                             <span>{{ $featured->likes_count }} likes</span>
                             <span class="font-semibold text-lime-200">{{ $featured->reading_time_minutes }} min</span>
                         </div>
+                        <div class="mt-2">
+                            <span class="{{ $featured->difficulty_badge_class }}">{{ $featured->difficulty_level }}</span>
+                        </div>
                     </a>
                 @endforeach
             </div>
         </section>
     @endif
+
+    <section class="bb-card mb-10" id="readingStreakWidget" data-weekly-target-default="5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Reading Streak + Goal</h2>
+                <p class="mt-1 text-sm text-slate-600">Keep momentum with a daily streak and weekly reading target.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="weeklyGoalInput" class="text-sm font-semibold text-slate-700">Weekly goal</label>
+                <input id="weeklyGoalInput" type="number" min="1" max="21" step="1" value="5" class="bb-input !mt-0 w-20">
+            </div>
+        </div>
+        <div class="mt-4">
+            <p id="streakText" class="text-sm font-semibold text-slate-700">Streak: 0 days</p>
+            <div class="mt-2 h-2 rounded-full bg-slate-200">
+                <div id="weeklyGoalBar" class="h-2 rounded-full bg-cyan-500" style="width: 0%"></div>
+            </div>
+            <p id="weeklyGoalText" class="mt-2 text-xs text-slate-600">0 / 5 posts this week</p>
+        </div>
+    </section>
 
     <section class="mb-10 grid gap-5 lg:grid-cols-4">
         <article class="bb-model-card">
@@ -295,6 +318,10 @@
                     <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
                         <span>{{ $post->reading_time_minutes }} min read</span>
                         <span>{{ $post->comments_count }} comments</span>
+                    </div>
+
+                    <div class="mt-2">
+                        <span class="{{ $post->difficulty_badge_class }}">{{ $post->difficulty_level }}</span>
                     </div>
 
                     <div class="mt-4 flex items-center gap-2">
