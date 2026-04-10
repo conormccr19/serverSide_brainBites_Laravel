@@ -42,6 +42,25 @@ class BrainBotService
             return null;
         }
 
+        $isFreeOnly = str_ends_with(strtolower($model), ':free');
+        $fallbackModels = $this->fallbackFreeChatModels();
+
+        if ($isFreeOnly) {
+            // Keep requests strictly on free model IDs to avoid paid usage.
+            $fallbackModels = array_values(array_filter(
+                $fallbackModels,
+                static fn (string $id): bool => str_ends_with(strtolower($id), ':free')
+            ));
+
+            $modelCandidates = array_values(array_unique(array_merge([$model], $fallbackModels)));
+        } else {
+            $normalizedModel = preg_replace('/:free$/i', '', $model) ?: $model;
+            $modelCandidates = array_values(array_unique(array_merge(
+                [$model, $normalizedModel],
+                $fallbackModels
+            )));
+        }
+
         $system = 'You are brainBot, a helpful learning assistant for BrainBites. '
             .'Answer clearly and concisely. '
             .'If external context is provided, use it. '
@@ -53,62 +72,78 @@ class BrainBotService
         }
 
         try {
-            $response = Http::timeout(45)
-                ->withHeaders([
-                    'Authorization' => 'Bearer '.$apiKey,
-                    'HTTP-Referer' => config('app.url', ''),
-                    'X-Title' => 'BrainBites BrainBot',
-                ])
-                ->post($url, [
-                    'model' => $model,
-                    'provider' => [
-                        // Allow broader provider routing when account UI does not expose privacy controls.
-                        'data_collection' => 'allow',
-                        'allow_fallbacks' => true,
-                        'sort' => 'price',
-                    ],
-                    'messages' => [
-                        ['role' => 'system', 'content' => $system],
-                        [
-                            'role' => 'user',
-                            'content' => $userPrompt,
+            foreach ($modelCandidates as $modelCandidate) {
+                $response = Http::timeout(45)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer '.$apiKey,
+                        'HTTP-Referer' => config('app.url', ''),
+                        'X-Title' => 'BrainBites BrainBot',
+                    ])
+                    ->post($url, [
+                        'model' => $modelCandidate,
+                        'provider' => [
+                            // Allow broader provider routing when account UI does not expose privacy controls.
+                            'data_collection' => 'allow',
+                            'allow_fallbacks' => true,
+                            'sort' => 'price',
                         ],
-                    ],
-                ]);
+                        'messages' => [
+                            ['role' => 'system', 'content' => $system],
+                            [
+                                'role' => 'user',
+                                'content' => $userPrompt,
+                            ],
+                        ],
+                    ]);
 
-            if (! $response->successful()) {
-                $errorMessage = (string) data_get($response->json(), 'error.message', '');
-                if ($errorMessage === '') {
-                    $errorMessage = $response->body();
-                }
+                if (! $response->successful()) {
+                    $errorMessage = (string) data_get($response->json(), 'error.message', '');
+                    if ($errorMessage === '') {
+                        $errorMessage = $response->body();
+                    }
 
-                \Log::error('OpenRouter API error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'model' => $model,
-                ]);
+                    \Log::error('OpenRouter API error', [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                        'model' => $modelCandidate,
+                    ]);
 
-                if (str_contains(strtolower($errorMessage), 'guardrail restrictions and data policy')) {
+                    $errorLower = strtolower($errorMessage);
+
+                    if ($response->status() === 403 && str_contains($errorLower, 'key limit exceeded')) {
+                        return 'Your OpenRouter API key has reached its usage limit. Generate a new key or wait for your limit reset, then try again.';
+                    }
+
+                    if (str_contains($errorLower, 'embedding model') && str_contains($errorLower, 'cannot be used with the chat/completions endpoint')) {
+                        return 'The configured model is embedding-only and cannot answer chat prompts. Set BRAINBOT_MODEL to a free chat model such as meta-llama/llama-3.2-3b-instruct:free.';
+                    }
+
+                    if (str_contains($errorLower, 'guardrail restrictions and data policy')) {
+                        return null;
+                    }
+
+                    if (str_contains($errorLower, 'deprecated')) {
+                        continue;
+                    }
+
+                    if ($response->status() === 429 || str_contains($errorLower, 'rate-limit') || str_contains($errorLower, 'rate limit') || str_contains($errorLower, 'temporarily rate-limited')) {
+                        continue;
+                    }
+
                     return null;
                 }
 
-                if (str_contains(strtolower($errorMessage), 'deprecated')) {
-                    return null;
+                $choices = $response->json('choices');
+
+                if (is_array($choices) && isset($choices[0]['message']['content'])) {
+                    return trim((string) $choices[0]['message']['content']);
                 }
 
-                return null;
+                \Log::error('OpenRouter API: No valid choices in response', [
+                    'response' => $response->json(),
+                    'model' => $modelCandidate,
+                ]);
             }
-
-            $choices = $response->json('choices');
-
-            if (is_array($choices) && isset($choices[0]['message']['content'])) {
-                return trim((string) $choices[0]['message']['content']);
-            }
-
-            \Log::error('OpenRouter API: No valid choices in response', [
-                'response' => $response->json(),
-                'model' => $model,
-            ]);
 
             return null;
         } catch (Throwable $e) {
@@ -119,6 +154,20 @@ class BrainBotService
 
             return null;
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function fallbackFreeChatModels(): array
+    {
+        $configured = config('services.brainbot.fallback_models', []);
+
+        if (! is_array($configured)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(static fn ($value) => is_string($value) ? trim($value) : '', $configured)));
     }
 
     /**

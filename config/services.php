@@ -38,6 +38,11 @@ return [
     'brainbot' => [
         // Model name for OpenRouter (e.g. 'qwen/qwen3.6-plus')
         'model' => env('BRAINBOT_MODEL', 'qwen/qwen3.6-plus'),
+        // Comma-separated fallback chat models for automatic failover
+        'fallback_models' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('BRAINBOT_FALLBACK_MODELS', 'openai/gpt-oss-20b:free,meta-llama/llama-3.2-3b-instruct:free,google/gemma-3n-e4b-it:free,liquid/lfm-2.5-1.2b-instruct:free'))
+        ))),
         // OpenRouter API endpoint and key
         'openrouter_url' => env('BRAINBOT_OPENROUTER_URL', 'https://openrouter.ai/api/v1/chat/completions'),
         'openrouter_key' => env('BRAINBOT_OPENROUTER_KEY'),
