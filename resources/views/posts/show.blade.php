@@ -42,7 +42,10 @@
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="normal" aria-pressed="true" aria-label="Set text size to normal">A</button>
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" data-font-size="large" aria-pressed="false" aria-label="Set text size to large">A+</button>
                 <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" id="readingModeToggle" aria-pressed="false" aria-label="Toggle reading mode">Reading mode</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" id="voiceReadToggle" aria-label="Listen to this post">Listen</button>
+                <button class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" type="button" id="voiceReadStop" aria-label="Stop audio" disabled>Stop</button>
             </div>
+            <p id="voiceReadStatus" class="mt-2 text-xs text-cyan-100/85" aria-live="polite">Voice reader ready.</p>
             <p class="mt-3 text-xs text-cyan-100/90">{{ $post->reading_time_minutes }} min read</p>
         </div>
     </section>
@@ -206,8 +209,12 @@
                 readingToggle.dataset.readingModeBound = 'true';
 
                 const key = 'bb-reading-mode';
+                const sidebar = document.getElementById('postSidebar');
                 const setMode = (enabled) => {
                     document.body.classList.toggle('bb-reading-mode', enabled);
+                    if (sidebar instanceof HTMLElement) {
+                        sidebar.hidden = enabled;
+                    }
                     readingToggle.setAttribute('aria-pressed', String(enabled));
                     readingToggle.textContent = enabled ? 'Exit reading mode' : 'Reading mode';
                     localStorage.setItem(key, enabled ? 'on' : 'off');
@@ -229,8 +236,13 @@
             const terms = {
                 api: 'An API is a defined way for software systems to communicate and exchange data.',
                 algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
+                app: 'An app is a software application designed to perform specific tasks for users.',
                 closure: 'A function that keeps access to variables from its outer scope, even after that scope finishes.',
                 cache: 'A temporary storage layer that keeps frequently used data for faster access.',
+                server: 'A server is a system that provides data or services to other systems over a network.',
+                function: 'A function is a reusable block of code that performs a specific task.',
+                model: 'A model is a simplified representation used to explain, predict, or structure data and behavior.',
+                data: 'Data is information that can be stored, processed, and analyzed.',
                 database: 'An organized system for storing and querying structured information.',
                 authentication: 'The process of verifying who a user is before granting access.',
                 encryption: 'A method that transforms readable data into unreadable form to protect it.',

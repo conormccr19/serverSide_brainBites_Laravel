@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeActionFeedback();
 	initializeReadingModeToggle();
 	initializeInlineGlossary();
+	initializeVoiceReader();
 
 	const counterInputs = document.querySelectorAll('[data-counter-target]');
 
@@ -647,9 +648,13 @@ function initializeReadingModeToggle() {
 	toggle.dataset.readingModeBound = 'true';
 
 	const key = 'bb-reading-mode';
+	const sidebar = document.getElementById('postSidebar');
 
 	const setMode = (enabled) => {
 		document.body.classList.toggle('bb-reading-mode', enabled);
+		if (sidebar instanceof HTMLElement) {
+			sidebar.hidden = enabled;
+		}
 		toggle.setAttribute('aria-pressed', String(enabled));
 		toggle.textContent = enabled ? 'Exit reading mode' : 'Reading mode';
 		localStorage.setItem(key, enabled ? 'on' : 'off');
@@ -669,8 +674,13 @@ function initializeInlineGlossary() {
 	const terms = {
 		api: 'An API is a defined way for software systems to communicate and exchange data.',
 		algorithm: 'A step-by-step method used to solve a problem or perform a computation.',
+		app: 'An app is a software application designed to perform specific tasks for users.',
 		closure: 'A function that keeps access to variables from its outer scope, even after that scope finishes.',
 		cache: 'A temporary storage layer that keeps frequently used data for faster access.',
+		server: 'A server is a system that provides data or services to other systems over a network.',
+		function: 'A function is a reusable block of code that performs a specific task.',
+		model: 'A model is a simplified representation used to explain, predict, or structure data and behavior.',
+		data: 'Data is information that can be stored, processed, and analyzed.',
 		database: 'An organized system for storing and querying structured information.',
 		authentication: 'The process of verifying who a user is before granting access.',
 		encryption: 'A method that transforms readable data into unreadable form to protect it.',
@@ -695,6 +705,7 @@ function initializeInlineGlossary() {
 			continue;
 		}
 
+		regex.lastIndex = 0;
 		if (regex.test(node.nodeValue || '')) {
 			textNodes.push(node);
 		}
@@ -741,6 +752,153 @@ function initializeInlineGlossary() {
 		}
 
 		node.parentNode?.replaceChild(fragment, node);
+	});
+}
+
+function initializeVoiceReader() {
+	const content = document.getElementById('postContent');
+	const toggle = document.getElementById('voiceReadToggle');
+	const stop = document.getElementById('voiceReadStop');
+	const status = document.getElementById('voiceReadStatus');
+
+	if (!content || !toggle || !stop || !status) {
+		return;
+	}
+
+	if (toggle.dataset.voiceBound === 'true') {
+		return;
+	}
+
+	toggle.dataset.voiceBound = 'true';
+
+	if (!('speechSynthesis' in window)) {
+		toggle.disabled = true;
+		stop.disabled = true;
+		status.textContent = 'Voice reader is not supported in this browser.';
+		return;
+	}
+
+	const synth = window.speechSynthesis;
+	let active = false;
+	let paused = false;
+
+	const setStatus = (message) => {
+		status.textContent = message;
+	};
+
+	const setControls = () => {
+		if (!active) {
+			toggle.textContent = 'Listen';
+			stop.disabled = true;
+			return;
+		}
+
+		toggle.textContent = paused ? 'Resume' : 'Pause';
+		stop.disabled = false;
+	};
+
+	const splitText = (text, max = 220) => {
+		const chunks = [];
+		let remaining = text.replace(/\s+/g, ' ').trim();
+
+		while (remaining.length > max) {
+			let cut = remaining.lastIndexOf('. ', max);
+			if (cut < max * 0.5) {
+				cut = remaining.lastIndexOf(' ', max);
+			}
+			if (cut <= 0) {
+				cut = max;
+			}
+
+			chunks.push(remaining.slice(0, cut + 1).trim());
+			remaining = remaining.slice(cut + 1).trim();
+		}
+
+		if (remaining) {
+			chunks.push(remaining);
+		}
+
+		return chunks.filter(Boolean);
+	};
+
+	const stopReading = (message = 'Voice reader stopped.') => {
+		synth.cancel();
+		active = false;
+		paused = false;
+		setControls();
+		setStatus(message);
+	};
+
+	const startReading = () => {
+		const text = (content.textContent || '').trim();
+		if (!text) {
+			setStatus('No readable text found in this post.');
+			return;
+		}
+
+		synth.cancel();
+
+		const chunks = splitText(text);
+		if (!chunks.length) {
+			setStatus('No readable text found in this post.');
+			return;
+		}
+
+		active = true;
+		paused = false;
+		setControls();
+		setStatus('Reading aloud...');
+
+		let remaining = chunks.length;
+
+		chunks.forEach((chunk) => {
+			const utterance = new SpeechSynthesisUtterance(chunk);
+			utterance.rate = 1;
+			utterance.pitch = 1;
+			utterance.lang = 'en-US';
+
+			utterance.onend = () => {
+				remaining -= 1;
+				if (remaining <= 0 && active && !paused) {
+					active = false;
+					setControls();
+					setStatus('Finished reading this post.');
+				}
+			};
+
+			utterance.onerror = () => {
+				stopReading('Voice reader encountered an error.');
+			};
+
+			synth.speak(utterance);
+		});
+	};
+
+	toggle.addEventListener('click', () => {
+		if (!active) {
+			startReading();
+			return;
+		}
+
+		if (paused) {
+			synth.resume();
+			paused = false;
+			setControls();
+			setStatus('Reading resumed.');
+		} else {
+			synth.pause();
+			paused = true;
+			setControls();
+			setStatus('Reading paused.');
+		}
+	});
+
+	stop.addEventListener('click', () => {
+		stopReading();
+	});
+
+	window.addEventListener('beforeunload', () => {
+		synth.cancel();
 	});
 }
 
