@@ -27,9 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeVoiceReader();
 	initializePostFeedbackPoll();
 	initializeParagraphBrainBot();
+	initializePostChatbot();
 	initializeFlashcards();
-	initializeTimelineBlocks();
-	initializeTranslatePost();
 	initializeGlossaryPage();
 	initializeRevisionMode();
 	initializeReadingStreakWidgets();
@@ -266,6 +265,130 @@ async function initializeTopicMap() {
 	animate();
 }
 
+function supportsSpeechSynthesis() {
+	return 'speechSynthesis' in window;
+}
+
+function attachAnswerVoiceControl(container, text) {
+	if (!(container instanceof HTMLElement)) return;
+	if (!supportsSpeechSynthesis()) return;
+
+	const trimmed = String(text || '').trim();
+	if (!trimmed) return;
+
+	const controls = document.createElement('div');
+	controls.className = 'bb-answer-voice';
+
+	const toggle = document.createElement('button');
+	toggle.type = 'button';
+	toggle.className = 'bb-button-secondary bb-voice-chip';
+	toggle.textContent = 'Start';
+
+	const stop = document.createElement('button');
+	stop.type = 'button';
+	stop.className = 'bb-button-secondary bb-voice-chip';
+	stop.textContent = 'Stop';
+	stop.disabled = true;
+
+	let active = false;
+	let paused = false;
+	const synth = window.speechSynthesis;
+
+	const splitText = (value, max = 220) => {
+		const chunks = [];
+		let remaining = value.replace(/\s+/g, ' ').trim();
+
+		while (remaining.length > max) {
+			let cut = remaining.lastIndexOf('. ', max);
+			if (cut < max * 0.5) {
+				cut = remaining.lastIndexOf(' ', max);
+			}
+			if (cut <= 0) {
+				cut = max;
+			}
+
+			chunks.push(remaining.slice(0, cut + 1).trim());
+			remaining = remaining.slice(cut + 1).trim();
+		}
+
+		if (remaining) {
+			chunks.push(remaining);
+		}
+
+		return chunks.filter(Boolean);
+	};
+
+	const setControls = () => {
+		toggle.textContent = !active ? 'Start' : (paused ? 'Resume' : 'Pause');
+		stop.disabled = !active;
+	};
+
+	const stopReading = () => {
+		synth.cancel();
+		active = false;
+		paused = false;
+		setControls();
+	};
+
+	const startReading = () => {
+		synth.cancel();
+
+		const chunks = splitText(trimmed);
+		if (!chunks.length) return;
+
+		active = true;
+		paused = false;
+		setControls();
+
+		let remaining = chunks.length;
+		chunks.forEach((chunk) => {
+			const utterance = new SpeechSynthesisUtterance(chunk);
+			utterance.rate = 1;
+			utterance.pitch = 1;
+			utterance.lang = 'en-US';
+
+			utterance.onend = () => {
+				remaining -= 1;
+				if (remaining <= 0 && active && !paused) {
+					active = false;
+					setControls();
+				}
+			};
+
+			utterance.onerror = () => {
+				stopReading();
+			};
+
+			synth.speak(utterance);
+		});
+	};
+
+	toggle.addEventListener('click', () => {
+		if (!active) {
+			startReading();
+			return;
+		}
+
+		if (paused) {
+			synth.resume();
+			paused = false;
+			setControls();
+		} else {
+			synth.pause();
+			paused = true;
+			setControls();
+		}
+	});
+
+	stop.addEventListener('click', () => {
+		stopReading();
+	});
+
+	controls.appendChild(toggle);
+	controls.appendChild(stop);
+	container.appendChild(controls);
+}
+
 function initializeBrainBot() {
 	const panel = document.getElementById('brainbotPanel');
 	const toggle = document.getElementById('brainbotToggle');
@@ -283,6 +406,11 @@ function initializeBrainBot() {
 		const bubble = document.createElement('article');
 		bubble.className = `bb-brainbot-message ${role}`;
 		bubble.textContent = text;
+
+		if (role === 'bot') {
+			attachAnswerVoiceControl(bubble, text);
+		}
+
 		messages.appendChild(bubble);
 		messages.scrollTop = messages.scrollHeight;
 		return bubble;
@@ -939,26 +1067,128 @@ function initializeParagraphBrainBot() {
 
 function initializeFlashcards() {
 	const panel = document.getElementById('flashcardsPanel');
+	const modal = document.getElementById('flashcardsModal');
+	const open = document.getElementById('openFlashcardsModal');
 	const deck = document.getElementById('flashcardsDeck');
 	const generate = document.getElementById('generateFlashcards');
 	const save = document.getElementById('saveFlashcards');
 	const content = document.getElementById('postContent');
-	if (!panel || !deck || !generate || !save || !content) return;
+	if (!panel || !modal || !open || !deck || !generate || !save || !content) return;
+
+	if (panel.dataset.flashcardsBound === 'true') {
+		return;
+	}
+
+	panel.dataset.flashcardsBound = 'true';
 
 	const categorySlug = content.getAttribute('data-post-category-slug') || 'general';
 	const storageKey = `bb-flashcards-${categorySlug}`;
 	let currentCards = [];
+	let index = 0;
+	let showAnswer = false;
+	let touchStartX = 0;
+	let lastFocused = null;
 
-	const render = (cards) => {
-		if (!cards.length) {
+	const closeButtons = [...modal.querySelectorAll('[data-flashcards-close]')];
+	const modalPanel = modal.querySelector('.bb-modal-panel');
+
+	const openModal = () => {
+		lastFocused = document.activeElement;
+		modal.hidden = false;
+		if (modalPanel instanceof HTMLElement) {
+			modalPanel.focus();
+		}
+	};
+
+	const closeModal = () => {
+		modal.hidden = true;
+		if (lastFocused instanceof HTMLElement) {
+			lastFocused.focus();
+		}
+	};
+
+	open.addEventListener('click', openModal);
+	closeButtons.forEach((button) => {
+		button.addEventListener('click', closeModal);
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && !modal.hidden) {
+			closeModal();
+		}
+	});
+
+	const render = () => {
+		if (!currentCards.length) {
 			deck.innerHTML = '<p class="text-sm text-slate-600">Generate cards to start studying.</p>';
 			save.disabled = true;
 			return;
 		}
 
-		deck.innerHTML = cards.map((card, index) => (
-			`<article class="bb-flashcard" data-flip-card><p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Card ${index + 1}</p><p class="mt-2 text-sm font-semibold text-slate-900">Q: ${escapeHtml(card.q)}</p><p class="mt-2 text-sm text-slate-700">A: ${escapeHtml(card.a)}</p></article>`
-		)).join('');
+		const card = currentCards[index];
+		const body = showAnswer
+			? `<p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Answer</p><p class="mt-2 text-sm text-slate-700">${escapeHtml(card.a)}</p>`
+			: `<p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Question</p><p class="mt-2 text-sm font-semibold text-slate-900">${escapeHtml(card.q)}</p><p class="mt-3 text-xs text-slate-500">Tap card to reveal answer</p>`;
+
+		deck.innerHTML = `<div class="bb-flashcard-wrap"><article class="bb-flashcard" id="flashcardActive" role="button" tabindex="0" aria-label="Flashcard">${body}</article><div class="bb-flashcard-controls"><button type="button" class="bb-button-secondary" id="flashPrev">Prev</button><p class="text-xs font-semibold text-slate-600">${index + 1} / ${currentCards.length}</p><button type="button" class="bb-button-secondary" id="flashNext">Next</button></div></div>`;
+
+		const active = document.getElementById('flashcardActive');
+		const prev = document.getElementById('flashPrev');
+		const next = document.getElementById('flashNext');
+
+		const toggleAnswer = () => {
+			showAnswer = !showAnswer;
+			render();
+		};
+
+		if (active) {
+			active.addEventListener('click', toggleAnswer);
+			active.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					toggleAnswer();
+				}
+			});
+
+			active.addEventListener('touchstart', (event) => {
+				touchStartX = event.touches[0]?.clientX || 0;
+			}, { passive: true });
+
+			active.addEventListener('touchend', (event) => {
+				const endX = event.changedTouches[0]?.clientX || 0;
+				const delta = endX - touchStartX;
+
+				if (Math.abs(delta) < 45) {
+					return;
+				}
+
+				if (delta < 0) {
+					index = (index + 1) % currentCards.length;
+				} else {
+					index = (index - 1 + currentCards.length) % currentCards.length;
+				}
+
+				showAnswer = false;
+				render();
+			}, { passive: true });
+		}
+
+		if (prev) {
+			prev.addEventListener('click', () => {
+				index = (index - 1 + currentCards.length) % currentCards.length;
+				showAnswer = false;
+				render();
+			});
+		}
+
+		if (next) {
+			next.addEventListener('click', () => {
+				index = (index + 1) % currentCards.length;
+				showAnswer = false;
+				render();
+			});
+		}
+
 		save.disabled = false;
 	};
 
@@ -980,7 +1210,9 @@ function initializeFlashcards() {
 
 	generate.addEventListener('click', () => {
 		currentCards = createCards();
-		render(currentCards);
+		index = 0;
+		showAnswer = false;
+		render();
 		showToast('Flashcards generated.');
 	});
 
@@ -994,53 +1226,75 @@ function initializeFlashcards() {
 		const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
 		if (Array.isArray(existing) && existing.length) {
 			currentCards = existing;
-			render(currentCards);
+			index = 0;
+			showAnswer = false;
+			render();
 		}
 	} catch {
-		render([]);
+		render();
 	}
 }
 
-function initializeTimelineBlocks() {
-	const panel = document.getElementById('timelineBlocks');
+function initializePostChatbot() {
+	const form = document.getElementById('postChatForm');
+	const input = document.getElementById('postChatInput');
+	const output = document.getElementById('postChatAnswer');
 	const content = document.getElementById('postContent');
-	if (!panel || !content) return;
+	const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-	const lines = [...content.querySelectorAll('p')].map((p) => (p.textContent || '').trim()).filter(Boolean);
-	const timeline = lines
-		.map((line, index) => {
-			const year = line.match(/\b(1[6-9]\d{2}|20\d{2}|21\d{2})\b/)?.[0] || null;
-			const step = line.match(/\b(step\s*\d+|phase\s*\d+|first|second|third|finally)\b/i)?.[0] || null;
-			if (!year && !step) return null;
-			return {
-				label: year || String(step).replace(/\b\w/g, (c) => c.toUpperCase()),
-				text: line,
-				order: index,
-			};
-		})
-		.filter(Boolean)
-		.slice(0, 8);
-
-	if (!timeline.length) {
+	if (!form || !input || !output || !content || !csrfToken) {
 		return;
 	}
 
-	panel.innerHTML = timeline.map((item) => (
-		`<article class="bb-timeline-item"><p class="bb-timeline-label">${escapeHtml(item.label)}</p><p class="text-sm text-slate-700">${escapeHtml(item.text)}</p></article>`
-	)).join('');
-}
+	if (form.dataset.postChatBound === 'true') {
+		return;
+	}
 
-function initializeTranslatePost() {
-	const tools = document.getElementById('translateTools');
-	if (!tools) return;
+	form.dataset.postChatBound = 'true';
 
-	const targetUrl = tools.getAttribute('data-translate-url') || window.location.href;
-	tools.querySelectorAll('[data-translate-lang]').forEach((button) => {
-		button.addEventListener('click', () => {
-			const lang = button.getAttribute('data-translate-lang') || 'en';
-			const url = `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(lang)}&u=${encodeURIComponent(targetUrl)}`;
-			window.open(url, '_blank', 'noopener,noreferrer');
-		});
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+
+		const question = input.value.trim();
+		if (!question) {
+			return;
+		}
+
+		const title = content.getAttribute('data-post-title') || 'Post';
+		const summary = ([...content.querySelectorAll('p')].map((p) => (p.textContent || '').trim()).filter(Boolean).slice(0, 3).join(' ')).slice(0, 900);
+
+		output.hidden = false;
+		output.textContent = 'Asking chatbot...';
+		input.disabled = true;
+
+		try {
+			const response = await fetch('/brainbot/chat', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': csrfToken,
+					'Accept': 'application/json',
+				},
+				body: JSON.stringify({
+					message: `Use this post context to answer: ${title}. Context: ${summary}. Question: ${question}`,
+				}),
+			});
+
+			const data = await response.json();
+			if (!response.ok) {
+				output.textContent = 'Could not get an answer right now. Please try again.';
+				return;
+			}
+
+			const answer = data.answer || 'No answer returned.';
+			output.textContent = answer;
+			attachAnswerVoiceControl(output, answer);
+		} catch {
+			output.textContent = 'Could not reach chatbot right now.';
+		} finally {
+			input.disabled = false;
+			input.focus();
+		}
 	});
 }
 

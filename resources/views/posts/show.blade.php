@@ -49,11 +49,6 @@
             <p id="voiceReadStatus" class="mt-2 text-xs text-cyan-100/85" aria-live="polite">Voice reader ready.</p>
             <p class="mt-3 text-xs text-cyan-100/90">{{ $post->reading_time_minutes }} min read</p>
             <p class="mt-1 text-xs text-cyan-100/90">Difficulty: <span class="{{ $post->difficulty_badge_class }}">{{ $post->difficulty_level }}</span></p>
-            <div class="mt-3 flex flex-wrap gap-2" id="translateTools" data-translate-url="{{ route('posts.show', $post) }}">
-                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="es">Translate ES</button>
-                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="fr">Translate FR</button>
-                <button type="button" class="bb-button-secondary border-white/30 bg-white/10 text-white hover:bg-white/20" data-translate-lang="de">Translate DE</button>
-            </div>
         </div>
     </section>
 
@@ -154,30 +149,6 @@
                 <p class="mt-1 text-sm text-slate-700">Complexity: <span class="{{ $post->difficulty_badge_class }}">{{ $post->difficulty_level }}</span></p>
             </div>
 
-            @if ($compareCandidates->isNotEmpty())
-                <div class="bb-card">
-                    <h2 class="text-lg font-bold text-slate-900">Compare Explanations</h2>
-                    <p class="mt-2 text-sm text-slate-600">Open another post from the same category side-by-side.</p>
-                    <form class="mt-3 grid gap-2" method="GET" action="{{ route('posts.show', $post) }}">
-                        <select name="compare" class="bb-select" aria-label="Select post to compare">
-                            <option value="">Choose a post...</option>
-                            @foreach ($compareCandidates as $candidate)
-                                <option value="{{ $candidate->slug }}" @selected(optional($comparePost)->slug === $candidate->slug)>{{ $candidate->title }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="bb-button-secondary">Compare now</button>
-                    </form>
-                </div>
-            @endif
-
-            <div class="bb-card" id="timelinePanel">
-                <h2 class="text-lg font-bold text-slate-900">Interactive Timeline</h2>
-                <p class="mt-2 text-sm text-slate-600">Auto-generated from headings and sequence cues.</p>
-                <div id="timelineBlocks" class="mt-3 grid gap-2">
-                    <p class="text-sm text-slate-500">Timeline will appear when sequence/date cues are detected.</p>
-                </div>
-            </div>
-
             @if ($relatedPosts->isNotEmpty())
                 <div class="bb-card">
                     <h2 class="text-lg font-bold text-slate-900">Related Questions</h2>
@@ -232,41 +203,49 @@
         </aside>
     </article>
 
-    @if ($comparePost)
-        <section class="bb-card mb-8">
-            <h2 class="text-xl font-bold text-slate-900">Side-by-side Comparison</h2>
-            <p class="mt-2 text-sm text-slate-600">Current post vs selected post from {{ $post->category->name }}.</p>
-            <div class="mt-4 grid gap-4 lg:grid-cols-2">
-                <article class="rounded-xl border border-slate-200 bg-white p-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Current</p>
-                    <h3 class="mt-1 text-lg font-semibold text-slate-900">{{ $post->title }}</h3>
-                    <p class="mt-2 text-sm text-slate-700">{{ $post->summary }}</p>
-                    <p class="mt-3 text-xs text-slate-500">{{ $post->reading_time_minutes }} min • {{ $post->difficulty_level }}</p>
-                </article>
-                <article class="rounded-xl border border-slate-200 bg-white p-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Comparison</p>
-                    <h3 class="mt-1 text-lg font-semibold text-slate-900">{{ $comparePost->title }}</h3>
-                    <p class="mt-2 text-sm text-slate-700">{{ $comparePost->summary }}</p>
-                    <p class="mt-3 text-xs text-slate-500">{{ $comparePost->reading_time_minutes }} min • {{ $comparePost->difficulty_level }}</p>
-                    <a href="{{ route('posts.show', $comparePost) }}" class="mt-3 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800">Open full comparison post</a>
-                </article>
+    <section class="bb-card mb-8" id="postChatPanel">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Ask Brain Bot about this post</h2>
+                <p class="mt-1 text-sm text-slate-600">Ask targeted follow-ups with this post as context.</p>
             </div>
-        </section>
-    @endif
+        </div>
+        <form id="postChatForm" class="mt-4 grid gap-3">
+            <label for="postChatInput" class="bb-label">Your question</label>
+            <input id="postChatInput" type="text" maxlength="500" class="bb-input" placeholder="Ask about this post..." required>
+            <div>
+                <button type="submit" class="bb-button-secondary">Ask Brain Bot</button>
+            </div>
+        </form>
+        <div id="postChatAnswer" class="bb-inline-answer mt-3" hidden></div>
+    </section>
 
     <section class="bb-card mb-8" id="flashcardsPanel">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h2 class="text-lg font-bold text-slate-900">Study Flashcards from Post</h2>
-                <p class="mt-1 text-sm text-slate-600">Generate quick Q/A cards and save this deck by category.</p>
+                <p class="mt-1 text-sm text-slate-600">Open an interactive flashcard modal with swipe and flip support.</p>
             </div>
-            <div class="flex gap-2">
+            <button type="button" class="bb-button-secondary" id="openFlashcardsModal">Open flashcards</button>
+        </div>
+        <p class="mt-3 text-sm text-slate-600">Tip: tap card to reveal answer, swipe left/right to move, or use Prev/Next.</p>
+    </section>
+
+    <div id="flashcardsModal" class="bb-modal bb-flashcard-modal" hidden>
+        <div class="bb-modal-backdrop" data-flashcards-close></div>
+        <div class="bb-modal-panel" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="flashcardsModalTitle">
+            <div class="flex items-center justify-between gap-2">
+                <h2 id="flashcardsModalTitle" class="text-xl font-bold text-slate-900">Interactive Flashcards</h2>
+                <button type="button" class="bb-button-secondary" data-flashcards-close>Close</button>
+            </div>
+            <p class="mt-2 text-sm text-slate-600">Generate or resume your category deck below.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
                 <button type="button" class="bb-button-secondary" id="generateFlashcards">Generate cards</button>
                 <button type="button" class="bb-button-secondary" id="saveFlashcards" disabled>Save deck</button>
             </div>
+            <div id="flashcardsDeck" class="mt-4"></div>
         </div>
-        <div id="flashcardsDeck" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
-    </section>
+    </div>
 
     <section class="bb-card mb-8" id="revisionPanel">
         <div class="flex flex-wrap items-center justify-between gap-3">
