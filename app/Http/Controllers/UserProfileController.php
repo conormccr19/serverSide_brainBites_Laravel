@@ -12,6 +12,13 @@ class UserProfileController extends Controller
     {
         abort_if(! $user->username, 404);
 
+        $user->load([
+            'pinnedPosts' => fn ($query) => $query
+                ->public()
+                ->with(['category'])
+                ->withCount(['likes', 'comments']),
+        ]);
+
         $publicPostsQuery = Post::query()
             ->public()
             ->where('user_id', $user->id)
@@ -48,6 +55,7 @@ class UserProfileController extends Controller
 
         return view('users.show', [
             'profileUser' => $user,
+            'pinnedPosts' => $user->pinnedPosts,
             'recentPosts' => $recentPosts,
             'topPosts' => $topPosts,
             'stats' => $stats,

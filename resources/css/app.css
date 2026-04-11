@@ -1028,6 +1028,7 @@
 		color: #047857;
 	}
 
+
 	.bb-glossary-term {
 		position: relative;
 		border-bottom: 1px dotted rgba(14, 116, 144, 0.75);
@@ -1132,6 +1133,7 @@
 		border-color: rgba(16, 185, 129, 0.55);
 		color: #6ee7b7;
 	}
+
 
 	@media (max-width: 767px) {
 		.bb-card-view-button {

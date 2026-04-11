@@ -14,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'username', 'bio', 'email', 'role', 'password', 'google_id', 'profile_photo_path'])]
+#[Fillable(['name', 'username', 'bio', 'email', 'role', 'password', 'google_id', 'profile_photo_path', 'cover_image_path', 'social_links', 'topic_badges'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -23,6 +23,7 @@ class User extends Authenticatable
 
     protected $appends = [
         'profile_photo_url',
+        'cover_image_url',
     ];
 
     /**
@@ -35,6 +36,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'social_links' => 'array',
+            'topic_badges' => 'array',
         ];
     }
 
@@ -73,6 +76,14 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(self::class, 'follows', 'followed_id', 'follower_id')
             ->withTimestamps();
+    }
+
+    public function pinnedPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'user_pinned_posts')
+            ->withPivot('position')
+            ->withTimestamps()
+            ->orderBy('user_pinned_posts.position');
     }
 
     public function contactMessagesResolved(): HasMany
@@ -117,6 +128,17 @@ class User extends Authenticatable
             '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" rx="100" fill="#0f172a"/><circle cx="100" cy="78" r="34" fill="#38bdf8"/><path d="M38 170c12-30 35-46 62-46s50 16 62 46" fill="#38bdf8"/><text x="100" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#ffffff">%s</text></svg>',
             e($label)
         ));
+    }
+
+    public function getCoverImageUrlAttribute(): string
+    {
+        if ($this->cover_image_path) {
+            return asset('storage/'.$this->cover_image_path);
+        }
+
+        return 'data:image/svg+xml;utf8,'.rawurlencode(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#155e75"/></linearGradient></defs><rect width="1600" height="520" fill="url(#g)"/><circle cx="280" cy="120" r="140" fill="#22d3ee" fill-opacity="0.15"/><circle cx="1240" cy="430" r="190" fill="#a5f3fc" fill-opacity="0.12"/></svg>'
+        );
     }
 
     public static function uniqueUsername(string $seed, ?int $ignoreId = null): string

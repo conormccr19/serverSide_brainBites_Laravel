@@ -36,6 +36,21 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:3072'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:4096'],
+            'social_links' => ['nullable', 'array'],
+            'social_links.website' => ['nullable', 'url', 'max:255'],
+            'social_links.x' => ['nullable', 'url', 'max:255'],
+            'social_links.github' => ['nullable', 'url', 'max:255'],
+            'social_links.linkedin' => ['nullable', 'url', 'max:255'],
+            'social_links.youtube' => ['nullable', 'url', 'max:255'],
+            'topic_badges' => ['nullable', 'string', 'max:300'],
+            'pinned_posts' => ['nullable', 'array', 'max:3'],
+            'pinned_posts.*' => [
+                'integer',
+                Rule::exists('posts', 'id')->where(fn ($query) => $query
+                    ->where('user_id', $this->user()->id)
+                    ->where('is_public', true)),
+            ],
         ];
     }
 }
