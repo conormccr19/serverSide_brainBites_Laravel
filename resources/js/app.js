@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeCommentForms();
 	initializeMobileNav();
 	initializeBackNavigation();
+	initializeMobileClickableCards();
 	initializeThemeToggle();
 	initializeTopicMap();
 	initializePageHero3D();
@@ -439,6 +440,42 @@ function createInlineCommentElement(comment) {
 	}
 
 	return article;
+}
+
+function initializeMobileClickableCards() {
+	const cards = document.querySelectorAll('[data-mobile-card-link]');
+
+	if (!cards.length || !window.matchMedia('(max-width: 767px)').matches) {
+		return;
+	}
+
+	const interactiveSelector = 'a, button, input, textarea, select, label, form, [data-copy-url], [data-delete-trigger]';
+
+	cards.forEach((card) => {
+		if (!(card instanceof HTMLElement)) {
+			return;
+		}
+
+		card.classList.add('bb-card-tap-target');
+
+		card.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) {
+				return;
+			}
+
+			if (target.closest(interactiveSelector)) {
+				return;
+			}
+
+			const url = card.getAttribute('data-mobile-card-link');
+			if (!url) {
+				return;
+			}
+
+			window.location.href = url;
+		});
+	});
 }
 
 function initializePwa() {

@@ -59,7 +59,7 @@
         @else
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($topPosts as $post)
-                    <article class="bb-post-card flex flex-col" data-tilt-card>
+                    <article class="bb-post-card flex flex-col" data-tilt-card data-mobile-card-link="{{ route('posts.show', $post) }}">
                         <div data-tilt-glare class="bb-post-glare"></div>
                         <img src="{{ $post->image_source }}" alt="{{ $post->title }}" class="h-44 w-full rounded-xl object-cover">
                         <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
@@ -68,7 +68,7 @@
                         </div>
                         <h3 class="mt-3 text-lg font-bold text-slate-900">{{ $post->title }}</h3>
                         <p class="mt-2 text-sm text-slate-600">{{ $post->summary }}</p>
-                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary mt-4">Read Post</a>
+                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary bb-card-view-button mt-4">Read Post</a>
                     </article>
                 @endforeach
             </div>
@@ -88,7 +88,7 @@
         @else
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($recentPosts as $post)
-                    <article class="bb-post-card flex flex-col" data-tilt-card>
+                    <article class="bb-post-card flex flex-col" data-tilt-card data-mobile-card-link="{{ route('posts.show', $post) }}">
                         <div data-tilt-glare class="bb-post-glare"></div>
                         <img src="{{ $post->image_source }}" alt="{{ $post->title }}" class="h-44 w-full rounded-xl object-cover">
                         <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
@@ -97,7 +97,7 @@
                         </div>
                         <h3 class="mt-3 text-lg font-bold text-slate-900">{{ $post->title }}</h3>
                         <p class="mt-2 text-sm text-slate-600">{{ $post->summary }}</p>
-                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary mt-4">Read Post</a>
+                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary bb-card-view-button mt-4">Read Post</a>
                     </article>
                 @endforeach
             </div>

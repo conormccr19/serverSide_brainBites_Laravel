@@ -27,7 +27,7 @@
     @else
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($bookmarkedPosts as $post)
-                <article class="bb-post-card flex flex-col" data-tilt-card>
+                <article class="bb-post-card flex flex-col" data-tilt-card data-mobile-card-link="{{ route('posts.show', $post) }}">
                     <div data-tilt-glare class="bb-post-glare"></div>
 
                     <img
@@ -50,7 +50,7 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary">View</a>
+                        <a href="{{ route('posts.show', $post) }}" class="bb-button-secondary bb-card-view-button">View</a>
                         <button type="button" class="bb-button-secondary" data-copy-url="{{ route('posts.show', $post) }}">Copy link</button>
 
                         <form action="{{ route('posts.bookmark', $post) }}" method="POST">

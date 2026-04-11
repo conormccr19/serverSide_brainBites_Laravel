@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        <a href="{{ route('home') }}" class="bb-button-secondary !px-3 !py-1.5 !text-xs">Back to Home</a>
+        <a href="{{ route('posts.index') }}" class="bb-button-secondary !px-3 !py-1.5 !text-xs">Explore Posts</a>
+    </div>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
@@ -39,7 +44,7 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>

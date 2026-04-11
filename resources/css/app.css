@@ -1133,6 +1133,20 @@
 		color: #6ee7b7;
 	}
 
+	@media (max-width: 767px) {
+		.bb-card-view-button {
+			display: none !important;
+		}
+
+		.bb-card-tap-target {
+			cursor: pointer;
+		}
+
+		.bb-card-tap-target:active {
+			transform: translateY(1px);
+		}
+	}
+
 	body.theme-dark .bb-inline-action-button {
 		border-color: rgba(34, 211, 238, 0.55);
 		background: linear-gradient(135deg, #0e7490, #0f172a);
