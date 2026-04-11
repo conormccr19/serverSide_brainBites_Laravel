@@ -110,6 +110,55 @@
             @yield('content')
         </main>
 
+        <footer class="bb-footer mt-8">
+            <div class="bb-shell py-10">
+                <div class="bb-footer-grid">
+                    <div>
+                        <p class="bb-kicker">Stay Curious</p>
+                        <h2 class="bb-title-font mt-3 text-3xl text-white sm:text-4xl">BrainBites</h2>
+                        <p class="mt-3 max-w-md text-sm text-cyan-100/90">
+                            Bite-sized ideas, visual explanations, and people you can follow to keep learning momentum high.
+                        </p>
+                    </div>
+
+                    <nav aria-label="Footer quick links">
+                        <p class="bb-footer-heading">Explore</p>
+                        <div class="bb-footer-links">
+                            <a href="{{ route('posts.index') }}">Explore Posts</a>
+                            <a href="{{ route('brainbot.page') }}">brainBot</a>
+                            <a href="{{ route('glossary.page') }}">Glossary</a>
+                            <a href="{{ route('about') }}">About</a>
+                            <a href="{{ route('contact') }}">Contact</a>
+                        </div>
+                    </nav>
+
+                    <nav aria-label="Footer account links">
+                        <p class="bb-footer-heading">Account</p>
+                        <div class="bb-footer-links">
+                            @auth
+                                @if (! auth()->user()->isAdmin())
+                                    <a href="{{ route('following.index') }}">Following Feed</a>
+                                    <a href="{{ route('bookmarks.index') }}">Bookmarks</a>
+                                @else
+                                    <a href="{{ route('admin.contact-messages.index') }}">Admin Inbox</a>
+                                @endif
+                                <a href="{{ route('dashboard') }}">Dashboard</a>
+                                <a href="{{ route('posts.create') }}">Create Post</a>
+                            @else
+                                <a href="{{ route('login') }}">Log in</a>
+                                <a href="{{ route('register') }}">Register</a>
+                            @endauth
+                        </div>
+                    </nav>
+                </div>
+
+                <div class="bb-footer-bottom">
+                    <p>Copyright {{ now()->year }} BrainBites. Keep asking better questions.</p>
+                    <a href="{{ route('home') }}">Back to Home</a>
+                </div>
+            </div>
+        </footer>
+
         <div id="deleteModal" class="bb-modal" hidden>
             <div class="bb-modal-backdrop" data-delete-close></div>
             <div class="bb-modal-panel" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalText">
