@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Comment extends Model
@@ -36,5 +37,29 @@ class Comment extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(Comment::class, 'parent_comment_id');
+    }
+
+    public function votes(): HasMany
+    {
+        return $this->hasMany(CommentVote::class);
+    }
+
+    public function voters(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'comment_votes')
+            ->withTimestamps();
+    }
+
+    public function isUpvotedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if (array_key_exists('is_upvoted_by_auth', $this->attributes)) {
+            return (bool) $this->attributes['is_upvoted_by_auth'];
+        }
+
+        return $this->votes->contains('user_id', $user->id);
     }
 }

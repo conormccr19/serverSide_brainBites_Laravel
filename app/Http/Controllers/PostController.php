@@ -190,7 +190,7 @@ class PostController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Post $post): View
+    public function show(Request $request, Post $post): View
     {
         $isScheduledForFuture = $post->is_public
             && $post->published_at
@@ -200,7 +200,65 @@ class PostController extends Controller
             abort(403);
         }
 
-        $post->load(['user', 'category', 'likes', 'bookmarks', 'comments.user', 'comments.replies.user', 'comments.replies.replies.user']);
+        $commentsSort = trim((string) $request->string('comments_sort', 'top'));
+        if (! in_array($commentsSort, ['top', 'new'], true)) {
+            $commentsSort = 'top';
+        }
+
+        $authUserId = auth()->id();
+
+        $post->load([
+            'user',
+            'category',
+            'likes',
+            'bookmarks',
+            'comments' => function ($query) use ($authUserId): void {
+                $query->with('user')
+                    ->withCount('votes')
+                    ->when($authUserId, function ($nested) use ($authUserId): void {
+                        $nested->withExists([
+                            'votes as is_upvoted_by_auth' => fn ($voteQuery) => $voteQuery->where('user_id', $authUserId),
+                        ]);
+                    })
+                    ->with([
+                        'replies' => function ($replyQuery) use ($authUserId): void {
+                            $replyQuery->with('user')
+                                ->withCount('votes')
+                                ->when($authUserId, function ($nestedReplies) use ($authUserId): void {
+                                    $nestedReplies->withExists([
+                                        'votes as is_upvoted_by_auth' => fn ($voteQuery) => $voteQuery->where('user_id', $authUserId),
+                                    ]);
+                                })
+                                ->with([
+                                    'replies' => function ($deepReplyQuery) use ($authUserId): void {
+                                        $deepReplyQuery->with('user')
+                                            ->withCount('votes')
+                                            ->when($authUserId, function ($deepNested) use ($authUserId): void {
+                                                $deepNested->withExists([
+                                                    'votes as is_upvoted_by_auth' => fn ($voteQuery) => $voteQuery->where('user_id', $authUserId),
+                                                ]);
+                                            });
+                                    },
+                                ]);
+                        },
+                    ]);
+            },
+        ]);
+
+        $rootComments = $post->comments
+            ->whereNull('parent_comment_id')
+            ->sort(function ($a, $b) use ($commentsSort): int {
+                if ($commentsSort === 'new') {
+                    return $b->created_at <=> $a->created_at;
+                }
+
+                if ($a->votes_count === $b->votes_count) {
+                    return $b->created_at <=> $a->created_at;
+                }
+
+                return $b->votes_count <=> $a->votes_count;
+            })
+            ->values();
 
         $isFollowingAuthor = auth()->check()
             ? auth()->user()->followingUsers()->whereKey($post->user_id)->exists()
@@ -220,6 +278,8 @@ class PostController extends Controller
             'post' => $post,
             'relatedPosts' => $relatedPosts,
             'isFollowingAuthor' => $isFollowingAuthor,
+            'rootComments' => $rootComments,
+            'commentsSort' => $commentsSort,
         ]);
     }
 

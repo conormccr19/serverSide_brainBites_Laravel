@@ -5,9 +5,15 @@
         2 => 'ml-12',
         default => 'ml-12',
     };
+
+    $sortedReplies = $comment->replies->sortBy('created_at')->values();
+    $visibleReplies = $sortedReplies->take(2);
+    $hiddenReplies = $sortedReplies->slice(2);
+    $hiddenRepliesId = 'comment-hidden-replies-'.$comment->id;
+    $upvotes = (int) ($comment->votes_count ?? 0);
 @endphp
 
-<article class="{{ $indentClass }} rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+<article class="{{ $indentClass }} rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" data-comment-id="{{ $comment->id }}">
     <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-3">
             <img src="{{ $comment->user->profile_photo_url }}" alt="{{ $comment->user->name }}" class="h-10 w-10 rounded-full border border-slate-200 object-cover">
@@ -30,10 +36,27 @@
 
     <p class="mt-3 whitespace-pre-wrap text-sm text-slate-700">{{ $comment->body }}</p>
 
+    <div class="mt-3 flex items-center gap-3">
+        <span class="text-xs font-semibold text-slate-500" data-comment-upvote-count>{{ $upvotes }} {{ \Illuminate\Support\Str::plural('upvote', $upvotes) }}</span>
+
+        @auth
+            @unless (auth()->user()->isAdmin())
+                <form action="{{ route('comments.upvote', [$post, $comment]) }}" method="POST" data-comment-upvote-form>
+                    @csrf
+                    <button type="submit" class="bb-button-secondary !px-3 !py-1.5 !text-xs {{ $comment->isUpvotedBy(auth()->user()) ? 'bb-comment-upvote-active' : '' }}" data-comment-upvote-button data-upvoted="{{ $comment->isUpvotedBy(auth()->user()) ? '1' : '0' }}">
+                        {{ $comment->isUpvotedBy(auth()->user()) ? 'Upvoted' : 'Upvote helpful' }}
+                    </button>
+                </form>
+            @else
+                <span class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">Upvotes disabled for admin accounts</span>
+            @endunless
+        @endauth
+    </div>
+
     @auth
         <details class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
             <summary class="cursor-pointer text-sm font-semibold text-cyan-700">Reply</summary>
-            <form action="{{ route('comments.store', $post) }}" method="POST" class="mt-3 grid gap-3">
+            <form action="{{ route('comments.store', $post) }}" method="POST" class="mt-3 grid gap-3" data-comment-form>
                 @csrf
                 <input type="hidden" name="parent_comment_id" value="{{ $comment->id }}">
                 <div>
@@ -48,11 +71,30 @@
         </details>
     @endauth
 
-    @if ($comment->replies->isNotEmpty())
-        <div class="mt-4 space-y-4 border-l-2 border-slate-200 pl-4">
-            @foreach ($comment->replies->sortBy('created_at') as $reply)
+    @if ($sortedReplies->isNotEmpty())
+        <div class="mt-4 space-y-4 border-l-2 border-slate-200 pl-4" data-comment-replies-root>
+            @foreach ($visibleReplies as $reply)
                 @include('posts.partials.comment', ['post' => $post, 'comment' => $reply, 'depth' => ($depth ?? 0) + 1])
             @endforeach
+
+            @if ($hiddenReplies->isNotEmpty())
+                <button
+                    type="button"
+                    class="bb-button-secondary !px-3 !py-1.5 !text-xs"
+                    data-replies-toggle
+                    data-target="{{ $hiddenRepliesId }}"
+                    data-expand-label="Show more replies ({{ $hiddenReplies->count() }})"
+                    data-collapse-label="Show fewer replies"
+                >
+                    Show more replies ({{ $hiddenReplies->count() }})
+                </button>
+
+                <div id="{{ $hiddenRepliesId }}" class="space-y-4" hidden>
+                    @foreach ($hiddenReplies as $reply)
+                        @include('posts.partials.comment', ['post' => $post, 'comment' => $reply, 'depth' => ($depth ?? 0) + 1])
+                    @endforeach
+                </div>
+            @endif
         </div>
     @endif
 </article>

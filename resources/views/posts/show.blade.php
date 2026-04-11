@@ -186,14 +186,20 @@
         </aside>
     </article>
 
-    <section class="bb-card mb-8">
+    <section class="bb-card mb-8" id="comments-section" data-comments-sort="{{ $commentsSort }}">
         <div class="flex items-center justify-between gap-3">
-            <h2 class="text-lg font-bold text-slate-900">Comments</h2>
-            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">{{ $post->comments->count() }} total</span>
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Comments</h2>
+                <span class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700" data-comments-total>{{ $post->comments->count() }} total</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('posts.show', ['post' => $post, 'comments_sort' => 'top']) }}" class="bb-button-secondary !px-3 !py-1.5 !text-xs {{ $commentsSort === 'top' ? 'bb-comments-sort-active' : '' }}">Top</a>
+                <a href="{{ route('posts.show', ['post' => $post, 'comments_sort' => 'new']) }}" class="bb-button-secondary !px-3 !py-1.5 !text-xs {{ $commentsSort === 'new' ? 'bb-comments-sort-active' : '' }}">New</a>
+            </div>
         </div>
 
         @auth
-            <form action="{{ route('comments.store', $post) }}" method="POST" class="mt-4 grid gap-3">
+            <form action="{{ route('comments.store', $post) }}" method="POST" class="mt-4 grid gap-3" data-comment-form>
                 @csrf
                 <div>
                     <label for="commentBody" class="bb-label">Add a comment</label>
@@ -210,8 +216,8 @@
             </div>
         @endauth
 
-        <div class="mt-5 space-y-4">
-            @forelse ($post->comments->whereNull('parent_comment_id')->sortByDesc('created_at') as $comment)
+        <div class="mt-5 space-y-4" data-comments-root-list>
+            @forelse ($rootComments as $comment)
                 @include('posts.partials.comment', ['post' => $post, 'comment' => $comment, 'depth' => 0])
             @empty
                 <p class="text-sm text-slate-700">No comments yet. Start the conversation.</p>

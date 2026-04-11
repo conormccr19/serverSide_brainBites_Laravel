@@ -8,6 +8,8 @@ Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
 	initializePwa();
+	initializeCommentUpvoteForms();
+	initializeCommentForms();
 	initializeMobileNav();
 	initializeBackNavigation();
 	initializeThemeToggle();
@@ -36,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeRevisionMode();
 	initializeReadingStreakWidgets();
 	initializeDashboardPinboard();
+	initializeCommentThreadToggles();
 
 	document.body.classList.remove('bb-calm-focus');
 
@@ -58,6 +61,36 @@ function initializeBackNavigation() {
 			window.location.href = fallbackUrl;
 		});
 	});
+
+	function initializeCommentThreadToggles() {
+		const toggleButtons = document.querySelectorAll('[data-replies-toggle]');
+
+		if (!toggleButtons.length) {
+			return;
+		}
+
+		toggleButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const targetId = button.getAttribute('data-target');
+				if (!targetId) {
+					return;
+				}
+
+				const target = document.getElementById(targetId);
+				if (!(target instanceof HTMLElement)) {
+					return;
+				}
+
+				const expandLabel = button.getAttribute('data-expand-label') || 'Show more replies';
+				const collapseLabel = button.getAttribute('data-collapse-label') || 'Show fewer replies';
+				const willExpand = target.hidden;
+
+				target.hidden = !willExpand;
+				button.textContent = willExpand ? collapseLabel : expandLabel;
+				button.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+			});
+		});
+	}
 }
 	localStorage.removeItem('bb-calm-focus');
 
@@ -206,6 +239,206 @@ function initializePostToc() {
 	}
 
 	updateActive(sections[0].target.id);
+}
+
+function initializeCommentUpvoteForms() {
+	if (window.__bbCommentUpvoteBound) {
+		return;
+	}
+
+	window.__bbCommentUpvoteBound = true;
+
+	document.addEventListener('submit', async (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLFormElement) || !target.matches('[data-comment-upvote-form]')) {
+			return;
+		}
+
+		event.preventDefault();
+
+		const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+		if (!csrfToken) {
+			target.submit();
+			return;
+		}
+
+		const button = target.querySelector('[data-comment-upvote-button]');
+		const container = target.parentElement;
+		const count = container?.querySelector('[data-comment-upvote-count]');
+
+		if (!(button instanceof HTMLButtonElement)) {
+			target.submit();
+			return;
+		}
+
+		button.disabled = true;
+
+		try {
+			const response = await fetch(target.action, {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': csrfToken,
+					'Accept': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest',
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error('Vote request failed');
+			}
+
+			const data = await response.json();
+			const isUpvoted = Boolean(data.upvoted);
+			const upvotes = Number(data.upvotes ?? 0);
+
+			button.dataset.upvoted = isUpvoted ? '1' : '0';
+			button.textContent = isUpvoted ? 'Upvoted' : 'Upvote helpful';
+			button.classList.toggle('bb-comment-upvote-active', isUpvoted);
+
+			if (count instanceof HTMLElement) {
+				count.textContent = `${upvotes} ${upvotes === 1 ? 'upvote' : 'upvotes'}`;
+			}
+
+			if (typeof showToast === 'function' && typeof data.message === 'string') {
+				showToast(data.message);
+			}
+		} catch {
+			if (typeof showToast === 'function') {
+				showToast('Could not update upvote right now.');
+			}
+		} finally {
+			button.disabled = false;
+		}
+	}, true);
+}
+
+function initializeCommentForms() {
+	if (window.__bbCommentFormsBound) {
+		return;
+	}
+
+	window.__bbCommentFormsBound = true;
+
+	document.addEventListener('submit', async (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLFormElement) || !target.matches('[data-comment-form]')) {
+			return;
+		}
+
+		event.preventDefault();
+
+		const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+		if (!csrfToken) {
+			target.submit();
+			return;
+		}
+
+		const submitButton = target.querySelector('button[type="submit"]');
+		if (submitButton instanceof HTMLButtonElement) {
+			submitButton.disabled = true;
+		}
+
+		const formData = new FormData(target);
+		const bodyField = target.querySelector('textarea[name="body"]');
+
+		try {
+			const response = await fetch(target.action, {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': csrfToken,
+					'Accept': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest',
+				},
+				body: formData,
+			});
+
+			const data = await response.json();
+			if (!response.ok || !data?.comment) {
+				throw new Error(data?.message || 'Comment submission failed');
+			}
+
+			if (bodyField instanceof HTMLTextAreaElement) {
+				bodyField.value = '';
+			}
+
+			const commentEl = createInlineCommentElement(data.comment);
+			const parentCommentId = Number(data.comment.parent_comment_id || 0);
+
+			if (parentCommentId > 0) {
+				const parentArticle = document.querySelector(`[data-comment-id="${parentCommentId}"]`);
+				if (parentArticle instanceof HTMLElement) {
+					let repliesRoot = parentArticle.querySelector('[data-comment-replies-root]');
+					if (!(repliesRoot instanceof HTMLElement)) {
+						repliesRoot = document.createElement('div');
+						repliesRoot.className = 'mt-4 space-y-4 border-l-2 border-slate-200 pl-4';
+						repliesRoot.setAttribute('data-comment-replies-root', '');
+						parentArticle.appendChild(repliesRoot);
+					}
+
+					repliesRoot.prepend(commentEl);
+				}
+			} else {
+				const commentsSection = document.getElementById('comments-section');
+				const rootList = commentsSection?.querySelector('[data-comments-root-list]');
+				const sortMode = commentsSection?.getAttribute('data-comments-sort') || 'top';
+
+				if (rootList instanceof HTMLElement) {
+					if (sortMode === 'new') {
+						rootList.prepend(commentEl);
+					} else {
+						rootList.appendChild(commentEl);
+					}
+				}
+			}
+
+			const commentsTotal = document.querySelector('[data-comments-total]');
+			if (commentsTotal instanceof HTMLElement) {
+				const current = Number((commentsTotal.textContent || '0').replace(/\D+/g, '') || 0);
+				commentsTotal.textContent = `${current + 1} total`;
+			}
+
+			if (typeof showToast === 'function' && typeof data.message === 'string') {
+				showToast(data.message);
+			}
+		} catch {
+			target.submit();
+		} finally {
+			if (submitButton instanceof HTMLButtonElement) {
+				submitButton.disabled = false;
+			}
+		}
+	}, true);
+}
+
+function createInlineCommentElement(comment) {
+	const article = document.createElement('article');
+	article.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm';
+	article.setAttribute('data-comment-id', String(comment.id));
+
+	const name = String(comment.user?.name || 'User');
+	const avatar = String(comment.user?.profile_photo_url || '');
+	const body = String(comment.body || '');
+	const createdAt = String(comment.created_at_human || 'just now');
+
+	article.innerHTML = `
+		<div class="flex items-start justify-between gap-3">
+			<div class="flex items-center gap-3">
+				<img src="${avatar}" alt="${name}" class="h-10 w-10 rounded-full border border-slate-200 object-cover">
+				<div>
+					<p class="font-semibold text-slate-900">${name}</p>
+					<p class="text-xs text-slate-500">${createdAt}</p>
+				</div>
+			</div>
+		</div>
+		<p class="mt-3 whitespace-pre-wrap text-sm text-slate-700"></p>
+	`;
+
+	const bodyEl = article.querySelector('p.mt-3');
+	if (bodyEl instanceof HTMLElement) {
+		bodyEl.textContent = body;
+	}
+
+	return article;
 }
 
 function initializePwa() {
