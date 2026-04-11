@@ -45,23 +45,28 @@
                 <nav class="hidden items-center gap-2 text-sm font-medium text-slate-700 md:flex">
                     <button type="button" data-theme-toggle class="bb-button-secondary">Dark mode</button>
                     <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
+                    @auth
+                        @if (! auth()->user()->isAdmin())
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
+                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
+                        @endif
+                    @endauth
                     <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
                     <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
                     <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
                     <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
 
                     @auth
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
+                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
+
                         @if (auth()->user()->isAdmin())
                             <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
                         @else
-                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
-                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
                             <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70" aria-label="Profile">
                                 <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="h-9 w-9 rounded-full object-cover border border-cyan-200 shadow-sm">
                             </a>
                         @endif
-                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
-                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -78,21 +83,26 @@
                 <nav class="grid gap-2 text-sm font-medium text-slate-700">
                     <button type="button" data-theme-toggle class="bb-button-secondary justify-start">Dark mode</button>
                     <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
+                    @auth
+                        @if (! auth()->user()->isAdmin())
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
+                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
+                        @endif
+                    @endauth
                     <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
                     <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
                     <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
                     <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
 
                     @auth
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
+                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
+
                         @if (auth()->user()->isAdmin())
                             <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
                         @else
-                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
-                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
                             <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Profile</a>
                         @endif
-                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
-                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
