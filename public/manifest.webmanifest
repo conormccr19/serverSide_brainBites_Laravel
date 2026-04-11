@@ -1,0 +1,25 @@
+{
+  "name": "BrainBites",
+  "short_name": "BrainBites",
+  "description": "Visual-first Q&A platform for curiosity-driven learning.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a1f36",
+  "theme_color": "#0a1f36",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}

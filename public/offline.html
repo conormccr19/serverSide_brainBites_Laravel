@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a1f36">
+    <title>BrainBites | Offline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        background: radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.22), transparent 35%),
+          radial-gradient(circle at 85% 80%, rgba(163, 230, 53, 0.2), transparent 35%),
+          linear-gradient(135deg, #031225, #0a1f36 45%, #0c2b3d);
+        color: #e2e8f0;
+        padding: 1.5rem;
+      }
+
+      .panel {
+        width: min(520px, 100%);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 1rem;
+        background: rgba(2, 6, 23, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        box-shadow: 0 30px 45px rgba(2, 6, 23, 0.4);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.6rem;
+      }
+
+      p {
+        margin: 0.75rem 0 0;
+        line-height: 1.55;
+        color: #cbd5e1;
+      }
+
+      a {
+        display: inline-block;
+        margin-top: 1rem;
+        color: #67e8f9;
+        font-weight: 700;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <h1>You are offline</h1>
+      <p>BrainBites cannot reach the network right now. You can keep reading previously cached pages and retry when your connection returns.</p>
+      <a href="/">Try again</a>
+    </main>
+  </body>
+</html>

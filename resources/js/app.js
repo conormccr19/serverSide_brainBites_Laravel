@@ -7,6 +7,7 @@ window.Alpine = Alpine;
 Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
+	initializePwa();
 	initializeMobileNav();
 	initializeThemeToggle();
 	initializeTopicMap();
@@ -64,6 +65,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 });
+
+function initializePwa() {
+	if (!('serviceWorker' in navigator)) {
+		return;
+	}
+
+	window.addEventListener('load', () => {
+		navigator.serviceWorker.register('/sw.js').catch(() => {
+			// Ignore registration failures to avoid blocking app interactions.
+		});
+	});
+}
 
 async function initializeTopicMap() {
 	const canvas = document.getElementById('topic-map-canvas');

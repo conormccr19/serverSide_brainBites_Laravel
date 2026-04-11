@@ -11,6 +11,12 @@
         <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=2">
         <link rel="shortcut icon" href="{{ asset('favicon.svg') }}?v=2">
         <link rel="apple-touch-icon" href="{{ asset('favicon.svg') }}?v=2">
+        <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+        <meta name="theme-color" content="#0a1f36">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="BrainBites">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=space-grotesk:400,500,700|instrument-serif:400" rel="stylesheet" />
