@@ -48,6 +48,7 @@
                         @if (auth()->user()->isAdmin())
                             <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
                         @else
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
                             <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
                             <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70" aria-label="Profile">
                                 <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="h-9 w-9 rounded-full object-cover border border-cyan-200 shadow-sm">
@@ -80,6 +81,7 @@
                         @if (auth()->user()->isAdmin())
                             <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
                         @else
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
                             <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
                             <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Profile</a>
                         @endif

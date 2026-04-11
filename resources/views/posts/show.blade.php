@@ -58,6 +58,16 @@
                 <span class="{{ $post->category_badge_class }}">{{ $post->category->name }}</span>
                 <span class="text-xs text-slate-700">By {{ $post->user->name }}</span>
                 <span class="text-xs text-slate-600">{{ $post->reading_time_minutes }} min read</span>
+                @auth
+                    @if (! auth()->user()->isAdmin() && auth()->id() !== $post->user_id)
+                        <form action="{{ route('users.follow', $post->user) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bb-button-secondary !px-2 !py-1 !text-xs">
+                                {{ $isFollowingAuthor ? 'Unfollow' : 'Follow' }}
+                            </button>
+                        </form>
+                    @endif
+                @endauth
             </div>
 
             <img

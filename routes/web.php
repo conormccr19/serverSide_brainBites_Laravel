@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\BrainBotController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\FollowingFeedController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PostController;
@@ -34,6 +36,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/bookmark', BookmarkController::class)->name('posts.bookmark');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('/users/{user}/follow', FollowController::class)->name('users.follow');
+    Route::get('/following', FollowingFeedController::class)->name('following.index');
     Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

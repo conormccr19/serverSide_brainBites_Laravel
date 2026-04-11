@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -55,6 +56,18 @@ class User extends Authenticatable
         return $this->hasMany(Comment::class);
     }
 
+    public function followingUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'follows', 'follower_id', 'followed_id')
+            ->withTimestamps();
+    }
+
+    public function followerUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'follows', 'followed_id', 'follower_id')
+            ->withTimestamps();
+    }
+
     public function contactMessagesResolved(): HasMany
     {
         return $this->hasMany(ContactMessage::class, 'resolved_by');
@@ -68,6 +81,15 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isFollowing(?User $user): bool
+    {
+        if (! $user || $this->is($user)) {
+            return false;
+        }
+
+        return $this->followingUsers->contains('id', $user->id);
     }
 
     public function getProfilePhotoUrlAttribute(): string

@@ -22,6 +22,11 @@ class PostController extends Controller
         $search = trim((string) $request->string('search'));
         $category = trim((string) $request->string('category'));
         $sort = trim((string) $request->string('sort', 'newest'));
+        $feed = trim((string) $request->string('feed', 'all'));
+
+        $followingIds = auth()->check()
+            ? auth()->user()->followingUsers()->pluck('users.id')
+            : collect();
 
         $postsQuery = Post::query()
             ->with(['user', 'category', 'likes', 'bookmarks'])
@@ -34,6 +39,10 @@ class PostController extends Controller
             }, function ($query): void {
                 $query->public();
             });
+
+        if ($feed === 'following' && auth()->check()) {
+            $postsQuery->whereIn('user_id', $followingIds->all());
+        }
 
         if ($search !== '') {
             $postsQuery->where(function ($query) use ($search): void {
@@ -101,6 +110,7 @@ class PostController extends Controller
             ->withCount([
                 'posts as public_posts_count' => fn ($query) => $query->public(),
                 'likes',
+                'followerUsers as followers_count',
             ])
             ->orderByDesc('public_posts_count')
             ->orderByDesc('likes_count')
@@ -126,6 +136,8 @@ class PostController extends Controller
             'search' => $search,
             'selectedCategory' => $category,
             'sort' => $sort,
+            'feed' => $feed,
+            'followingIds' => $followingIds,
         ]);
     }
 
@@ -189,6 +201,11 @@ class PostController extends Controller
         }
 
         $post->load(['user', 'category', 'likes', 'bookmarks', 'comments.user', 'comments.replies.user', 'comments.replies.replies.user']);
+
+        $isFollowingAuthor = auth()->check()
+            ? auth()->user()->followingUsers()->whereKey($post->user_id)->exists()
+            : false;
+
         $relatedPosts = Post::query()
             ->public()
             ->with(['user', 'category', 'bookmarks'])
@@ -202,6 +219,7 @@ class PostController extends Controller
         return view('posts.show', [
             'post' => $post,
             'relatedPosts' => $relatedPosts,
+            'isFollowingAuthor' => $isFollowingAuthor,
         ]);
     }
 

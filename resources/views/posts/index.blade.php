@@ -103,7 +103,15 @@
     @endif
 
     <section class="bb-glass bb-search-panel">
+        <div class="mb-4 flex flex-wrap gap-2 px-1">
+            <a href="{{ route('posts.index', array_filter(['feed' => 'all', 'search' => $search, 'category' => $selectedCategory, 'sort' => $sort])) }}" class="{{ $feed === 'all' ? 'bb-button' : 'bb-button-secondary' }}">All Feed</a>
+            @auth
+                <a href="{{ route('posts.index', array_filter(['feed' => 'following', 'search' => $search, 'category' => $selectedCategory, 'sort' => $sort])) }}" class="{{ $feed === 'following' ? 'bb-button' : 'bb-button-secondary' }}">Following Feed</a>
+            @endauth
+        </div>
+
         <form action="{{ route('posts.index') }}" method="GET" class="grid gap-4 md:grid-cols-4 md:items-end">
+            <input type="hidden" name="feed" value="{{ $feed }}">
             <div class="md:col-span-2">
                 <label for="search" class="bb-label">Search Questions</label>
                 <input
@@ -237,9 +245,21 @@
                         <div class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-3">
                             <div>
                                 <p class="font-semibold text-slate-900">{{ $contributor->name }}</p>
-                                <p class="text-xs text-slate-500">{{ $contributor->public_posts_count }} public posts</p>
+                                <p class="text-xs text-slate-500">{{ $contributor->public_posts_count }} public posts • {{ $contributor->followers_count }} followers</p>
                             </div>
-                            <span class="bb-chip">{{ $contributor->likes_count }} likes</span>
+                            <div class="flex items-center gap-2">
+                                <span class="bb-chip">{{ $contributor->likes_count }} likes</span>
+                                @auth
+                                    @if (! auth()->user()->isAdmin() && auth()->id() !== $contributor->id)
+                                        <form action="{{ route('users.follow', $contributor) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="bb-button-secondary">
+                                                {{ $followingIds->contains($contributor->id) ? 'Unfollow' : 'Follow' }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endauth
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -312,7 +332,19 @@
 
                     <div class="mt-5 flex items-center justify-between text-xs text-slate-500">
                         <span>By {{ $post->user->name }}</span>
-                        <span>{{ $post->likes_count }} likes</span>
+                        <div class="flex items-center gap-2">
+                            <span>{{ $post->likes_count }} likes</span>
+                            @auth
+                                @if (! auth()->user()->isAdmin() && auth()->id() !== $post->user_id)
+                                    <form action="{{ route('users.follow', $post->user) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="bb-button-secondary !px-2 !py-1 !text-xs">
+                                            {{ $followingIds->contains($post->user_id) ? 'Unfollow' : 'Follow' }}
+                                        </button>
+                                    </form>
+                                @endif
+                            @endauth
+                        </div>
                     </div>
 
                     <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
