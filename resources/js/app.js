@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializePageHero3D();
 	initializeTiltCards();
 	initializePostPreview();
+	initializePostToc();
 	initializeReadingTools();
 	initializeDeletePrompts();
 	initializeBrainBot();
@@ -87,6 +88,125 @@ function initializeBackNavigation() {
 		});
 	}
 });
+
+function initializePostToc() {
+	const tocLinks = [...document.querySelectorAll('.bb-toc-link')];
+	const progressBar = document.querySelector('[data-toc-progress-bar]');
+	const progressLabel = document.querySelector('[data-toc-progress-label]');
+
+	if (!tocLinks.length) {
+		return;
+	}
+
+	const sections = tocLinks
+		.map((link) => {
+			const href = link.getAttribute('href') || '';
+			if (!href.startsWith('#')) {
+				return null;
+			}
+
+			const target = document.querySelector(href);
+			if (!(target instanceof HTMLElement)) {
+				return null;
+			}
+
+			return { link, target };
+		})
+		.filter(Boolean);
+
+	if (!sections.length) {
+		return;
+	}
+
+	const updateActive = (activeId) => {
+		let activeIndex = 0;
+
+		sections.forEach((entry, index) => {
+			const isActive = entry.target.id === activeId;
+			entry.link.classList.toggle('is-active', isActive);
+			entry.link.setAttribute('aria-current', isActive ? 'location' : 'false');
+
+			if (isActive) {
+				activeIndex = index;
+			}
+		});
+
+		if (progressBar instanceof HTMLElement) {
+			const percent = ((activeIndex + 1) / sections.length) * 100;
+			progressBar.style.width = `${percent}%`;
+		}
+
+		if (progressLabel instanceof HTMLElement) {
+			progressLabel.textContent = `Section ${activeIndex + 1} of ${sections.length}`;
+		}
+	};
+
+	tocLinks.forEach((link) => {
+		link.addEventListener('click', (event) => {
+			const href = link.getAttribute('href') || '';
+			if (!href.startsWith('#')) {
+				return;
+			}
+
+			const target = document.querySelector(href);
+			if (!(target instanceof HTMLElement)) {
+				return;
+			}
+
+			event.preventDefault();
+			target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			history.replaceState(null, '', href);
+			updateActive(target.id);
+		});
+	});
+
+	if ('IntersectionObserver' in window) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const visible = entries
+					.filter((entry) => entry.isIntersecting)
+					.sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+				if (visible?.target instanceof HTMLElement) {
+					updateActive(visible.target.id);
+				}
+			},
+			{
+				rootMargin: '-20% 0px -58% 0px',
+				threshold: [0.1, 0.25, 0.5, 0.75],
+			}
+		);
+
+		sections.forEach((entry) => observer.observe(entry.target));
+	} else {
+		const onScroll = () => {
+			let activeId = sections[0].target.id;
+
+			sections.forEach((entry) => {
+				if (entry.target.getBoundingClientRect().top <= 140) {
+					activeId = entry.target.id;
+				}
+			});
+
+			updateActive(activeId);
+		};
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+		onScroll();
+		return;
+	}
+
+	const initialHash = window.location.hash;
+	if (initialHash) {
+		const active = sections.find((entry) => `#${entry.target.id}` === initialHash);
+		if (active) {
+			updateActive(active.target.id);
+			return;
+		}
+	}
+
+	updateActive(sections[0].target.id);
+}
 
 function initializePwa() {
 	if (!('serviceWorker' in navigator)) {

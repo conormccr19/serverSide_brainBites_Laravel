@@ -138,7 +138,13 @@
         <aside id="postSidebar" class="space-y-4">
             @if ($tocSections->isNotEmpty())
                 <div class="bb-card">
-                    <h2 class="text-lg font-bold text-slate-900">Table of Contents</h2>
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-bold text-slate-900">Table of Contents</h2>
+                        <span class="text-xs font-semibold text-slate-500" data-toc-progress-label>Section 1 of {{ $tocSections->count() }}</span>
+                    </div>
+                    <div class="bb-toc-progress mt-3">
+                        <div class="bb-toc-progress-bar" data-toc-progress-bar></div>
+                    </div>
                     <nav class="mt-3 grid gap-1">
                         @foreach ($tocSections as $toc)
                             <a href="#{{ $toc['id'] }}" class="bb-toc-link">{{ $toc['label'] }}</a>
