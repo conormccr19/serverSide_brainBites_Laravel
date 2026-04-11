@@ -363,6 +363,12 @@
 		@apply inline-flex items-center justify-center rounded-lg border border-slate-300/80 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-cyan-400 hover:bg-white;
 	}
 
+	.bb-nav-active {
+		background: rgba(6, 182, 212, 0.12);
+		color: #0e7490 !important;
+		box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.22);
+	}
+
 	.bb-back-nav {
 		display: inline-flex;
 		align-items: center;
@@ -399,6 +405,12 @@
 
 	body.theme-dark .bb-button-secondary {
 		@apply border-slate-600 bg-slate-900 text-slate-100 hover:border-cyan-500 hover:bg-slate-800;
+	}
+
+	body.theme-dark .bb-nav-active {
+		background: rgba(14, 116, 144, 0.35);
+		color: #a5f3fc !important;
+		box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.35);
 	}
 
 	body.theme-dark .bb-back-nav {

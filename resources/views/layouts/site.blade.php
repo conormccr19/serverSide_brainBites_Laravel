@@ -44,27 +44,27 @@
 
                 <nav class="hidden items-center gap-2 text-sm font-medium text-slate-700 md:flex">
                     <button type="button" data-theme-toggle class="bb-button-secondary">Dark mode</button>
-                    <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
+                    <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('home') || request()->routeIs('posts.*') ? 'bb-nav-active' : '' }}">Explore</a>
                     @auth
                         @if (! auth()->user()->isAdmin())
-                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
-                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('following.*') ? 'bb-nav-active' : '' }}">Following</a>
+                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('bookmarks.*') ? 'bb-nav-active' : '' }}">Bookmarks</a>
                         @endif
                     @endauth
-                    <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
-                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
-                    <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
-                    <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
+                    <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('brainbot.*') ? 'bb-nav-active' : '' }}">brainBot</a>
+                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('glossary.*') ? 'bb-nav-active' : '' }}">Glossary</a>
+                    <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('about') ? 'bb-nav-active' : '' }}">About</a>
+                    <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('contact') || request()->routeIs('contact.submit') ? 'bb-nav-active' : '' }}">Contact</a>
 
                     @auth
-                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
-                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('dashboard') ? 'bb-nav-active' : '' }}">Dashboard</a>
+                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('posts.create') ? 'bb-nav-active' : '' }}">Add Post</a>
 
                         @if (auth()->user()->isAdmin())
-                            <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
+                            <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('admin.contact-messages.*') ? 'bb-nav-active' : '' }}">Inbox</a>
                         @else
-                            <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70" aria-label="Profile">
-                                <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="h-9 w-9 rounded-full object-cover border border-cyan-200 shadow-sm">
+                            <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('profile.*') ? 'bb-nav-active' : '' }}" aria-label="Profile">
+                                <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="h-9 w-9 rounded-full object-cover border border-cyan-200 shadow-sm {{ request()->routeIs('profile.*') ? 'ring-2 ring-cyan-400' : '' }}">
                             </a>
                         @endif
 
@@ -82,26 +82,26 @@
             <div id="mobileNavPanel" class="bb-shell hidden pb-4 md:hidden">
                 <nav class="grid gap-2 text-sm font-medium text-slate-700">
                     <button type="button" data-theme-toggle class="bb-button-secondary justify-start">Dark mode</button>
-                    <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Explore</a>
+                    <a href="{{ route('posts.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('home') || request()->routeIs('posts.*') ? 'bb-nav-active' : '' }}">Explore</a>
                     @auth
                         @if (! auth()->user()->isAdmin())
-                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Following</a>
-                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Bookmarks</a>
+                            <a href="{{ route('following.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('following.*') ? 'bb-nav-active' : '' }}">Following</a>
+                            <a href="{{ route('bookmarks.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('bookmarks.*') ? 'bb-nav-active' : '' }}">Bookmarks</a>
                         @endif
                     @endauth
-                    <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">brainBot</a>
-                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Glossary</a>
-                    <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">About</a>
-                    <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Contact</a>
+                    <a href="{{ route('brainbot.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('brainbot.*') ? 'bb-nav-active' : '' }}">brainBot</a>
+                    <a href="{{ route('glossary.page') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('glossary.*') ? 'bb-nav-active' : '' }}">Glossary</a>
+                    <a href="{{ route('about') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('about') ? 'bb-nav-active' : '' }}">About</a>
+                    <a href="{{ route('contact') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('contact') || request()->routeIs('contact.submit') ? 'bb-nav-active' : '' }}">Contact</a>
 
                     @auth
-                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Dashboard</a>
-                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Add Post</a>
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('dashboard') ? 'bb-nav-active' : '' }}">Dashboard</a>
+                        <a href="{{ route('posts.create') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('posts.create') ? 'bb-nav-active' : '' }}">Add Post</a>
 
                         @if (auth()->user()->isAdmin())
-                            <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Inbox</a>
+                            <a href="{{ route('admin.contact-messages.index') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('admin.contact-messages.*') ? 'bb-nav-active' : '' }}">Inbox</a>
                         @else
-                            <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70">Profile</a>
+                            <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 transition hover:bg-white/70 {{ request()->routeIs('profile.*') ? 'bb-nav-active' : '' }}">Profile</a>
                         @endif
 
                         <form method="POST" action="{{ route('logout') }}">
