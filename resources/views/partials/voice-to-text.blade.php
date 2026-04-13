@@ -10,7 +10,6 @@
             'textarea',
             'input[type="text"]',
             'input[type="search"]',
-            'input[type="email"]',
             'input[type="url"]',
             'input[type="tel"]',
         ].join(',');
@@ -47,12 +46,55 @@
             button.classList.add('bb-vtt-button--listening');
         }
 
+        function shouldAttachVoice(field) {
+            if (!(field instanceof HTMLElement)) {
+                return false;
+            }
+
+            if (field.dataset.bbVoice === 'off') {
+                return false;
+            }
+
+            if (field instanceof HTMLInputElement) {
+                const type = (field.type || '').toLowerCase();
+                const disallowedTypes = new Set([
+                    'email',
+                    'password',
+                    'hidden',
+                    'number',
+                    'date',
+                    'datetime-local',
+                    'month',
+                    'week',
+                    'time',
+                    'color',
+                    'file',
+                ]);
+
+                if (disallowedTypes.has(type)) {
+                    return false;
+                }
+
+                const autocomplete = String(field.getAttribute('autocomplete') || '').toLowerCase();
+                if (/(username|email|current-password|new-password|one-time-code)/.test(autocomplete)) {
+                    return false;
+                }
+
+                const identityText = `${field.name || ''} ${field.id || ''} ${field.placeholder || ''}`.toLowerCase();
+                if (/(email|username|user name|login|password|passcode|otp|one-time|verification|token|pin)/.test(identityText)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         function attachButton(field) {
             if (!(field instanceof HTMLElement)) {
                 return;
             }
 
-            if (field.dataset.bbVoiceAttached === 'true' || field.disabled || field.readOnly) {
+            if (field.dataset.bbVoiceAttached === 'true' || field.disabled || field.readOnly || !shouldAttachVoice(field)) {
                 return;
             }
 
