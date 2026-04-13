@@ -1,4 +1,11 @@
 <x-guest-layout>
+    <div class="mb-4">
+        <button type="button" class="bb-back-nav" data-back-nav data-fallback-url="{{ route('home') }}" aria-label="Go back to previous page">
+            <span aria-hidden="true">&larr;</span>
+            Back
+        </button>
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
