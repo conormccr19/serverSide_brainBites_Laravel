@@ -23,6 +23,9 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body>
+        {{-- Hack to prevent Tailwind from purging dark modifiers --}}
+        <div class="hidden dark theme-dark html.dark html.dark body" aria-hidden="true"></div>
+
         <div class="bb-atmosphere" aria-hidden="true"></div>
 
         <header class="bb-nav">

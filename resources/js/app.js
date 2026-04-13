@@ -1104,13 +1104,14 @@ function initializeBrainBot() {
 }
 
 function initializeThemeToggle() {
-	const root = document.body;
+	const root = document.documentElement;
 	const toggles = [...document.querySelectorAll('[data-theme-toggle]')];
 	const key = 'bb-theme';
 
 	const applyTheme = (theme) => {
 		const dark = theme === 'dark';
-		root.classList.toggle('theme-dark', dark);
+		root.classList.toggle('dark', dark);
+		document.body.classList.toggle('theme-dark', dark); // Keep this for existing custom CSS
 		toggles.forEach((toggle) => {
 			toggle.textContent = dark ? 'Light mode' : 'Dark mode';
 		});
@@ -1130,7 +1131,7 @@ function initializeThemeToggle() {
 
 	toggles.forEach((toggle) => {
 		toggle.addEventListener('click', () => {
-			const next = root.classList.contains('theme-dark') ? 'light' : 'dark';
+			const next = root.classList.contains('dark') ? 'light' : 'dark';
 			localStorage.setItem(key, next);
 			applyTheme(next);
 			showToast(`Theme switched to ${next}.`);
