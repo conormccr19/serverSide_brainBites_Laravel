@@ -28,5 +28,6 @@
                 {{ $slot }}
             </div>
         </div>
+        @include('partials.voice-to-text')
     </body>
 </html>

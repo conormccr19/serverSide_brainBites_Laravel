@@ -198,5 +198,6 @@
 
         <div id="bbToast" class="bb-toast" role="status" aria-live="polite" hidden></div>
         <button id="backToTop" type="button" class="bb-backtotop" aria-label="Back to top" hidden>Top</button>
+        @include('partials.voice-to-text')
     </body>
 </html>
