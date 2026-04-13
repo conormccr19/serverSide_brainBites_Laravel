@@ -35,7 +35,17 @@
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">{{ $message->topic }}</p>
-                                <h2 class="text-lg font-bold text-slate-900">{{ $message->name }} <span class="text-sm font-medium text-slate-500">({{ $message->email }})</span></h2>
+                                <h2 class="text-lg font-bold text-slate-900">
+                                    {{ $message->name }}
+                                    <a
+                                        href="mailto:{{ $message->email }}?subject={{ urlencode('Re: ' . $message->topic) }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="text-sm font-medium text-cyan-700 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-800"
+                                    >
+                                        ({{ $message->email }})
+                                    </a>
+                                </h2>
                             </div>
                             <span class="bb-chip">{{ $message->is_resolved ? 'Resolved' : 'Open' }}</span>
                         </div>
@@ -51,13 +61,24 @@
                             @endif
                         </div>
 
-                        <form method="POST" action="{{ route('admin.contact-messages.resolve', $message) }}" class="mt-4">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="bb-button-secondary">
-                                {{ $message->is_resolved ? 'Mark as Open' : 'Mark as Resolved' }}
-                            </button>
-                        </form>
+                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                            <a
+                                href="mailto:{{ $message->email }}?subject={{ urlencode('Re: ' . $message->topic) }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="bb-button-secondary"
+                            >
+                                Email
+                            </a>
+
+                            <form method="POST" action="{{ route('admin.contact-messages.resolve', $message) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="bb-button-secondary">
+                                    {{ $message->is_resolved ? 'Mark as Open' : 'Mark as Resolved' }}
+                                </button>
+                            </form>
+                        </div>
                     </article>
                 @endforeach
             </div>

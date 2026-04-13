@@ -710,6 +710,87 @@ function supportsSpeechSynthesis() {
 	return 'speechSynthesis' in window;
 }
 
+function pickPreferredVoice(synth, preferredLang = 'en-US') {
+	if (!synth || typeof synth.getVoices !== 'function') {
+		return null;
+	}
+
+	const voices = synth.getVoices();
+	if (!Array.isArray(voices) || !voices.length) {
+		return null;
+	}
+
+	const lang = String(preferredLang || 'en-US').toLowerCase();
+	const baseLang = lang.split('-')[0];
+	const qualityHints = [
+		'natural',
+		'neural',
+		'premium',
+		'wavenet',
+		'aria',
+		'jenny',
+		'guy',
+		'davis',
+		'aria online',
+		'google us english',
+		'samantha',
+		'daniel',
+	];
+
+	const scoreVoice = (voice) => {
+		const voiceLang = String(voice.lang || '').toLowerCase();
+		const name = String(voice.name || '').toLowerCase();
+		let score = 0;
+
+		if (voiceLang === lang) {
+			score += 120;
+		} else if (voiceLang.startsWith(`${baseLang}-`)) {
+			score += 90;
+		} else if (voiceLang.startsWith(baseLang)) {
+			score += 70;
+		}
+
+		if (voice.default) {
+			score += 30;
+		}
+
+		if (voice.localService) {
+			score += 15;
+		}
+
+		qualityHints.forEach((hint, index) => {
+			if (name.includes(hint)) {
+				score += 25 - Math.min(index, 10);
+			}
+		});
+
+		if (name.includes('female') || name.includes('woman')) {
+			score += 4;
+		}
+
+		return score;
+	};
+
+	return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] || null;
+}
+
+function createHumanLikeUtterance(text, synth, preferredLang = 'en-US') {
+	const utterance = new SpeechSynthesisUtterance(text);
+	const voice = pickPreferredVoice(synth, preferredLang);
+
+	utterance.lang = preferredLang;
+	utterance.rate = 0.95;
+	utterance.pitch = 1.03;
+	utterance.volume = 1;
+
+	if (voice) {
+		utterance.voice = voice;
+		utterance.lang = voice.lang || preferredLang;
+	}
+
+	return utterance;
+}
+
 function attachAnswerVoiceControl(container, text) {
 	if (!(container instanceof HTMLElement)) return;
 	if (!supportsSpeechSynthesis()) return;
@@ -734,6 +815,14 @@ function attachAnswerVoiceControl(container, text) {
 	let active = false;
 	let paused = false;
 	const synth = window.speechSynthesis;
+	let preferredVoice = pickPreferredVoice(synth, 'en-US');
+
+	const refreshPreferredVoice = () => {
+		preferredVoice = pickPreferredVoice(synth, 'en-US');
+	};
+
+	refreshPreferredVoice();
+	synth.addEventListener('voiceschanged', refreshPreferredVoice);
 
 	const splitText = (value, max = 220) => {
 		const chunks = [];
@@ -783,10 +872,11 @@ function attachAnswerVoiceControl(container, text) {
 
 		let remaining = chunks.length;
 		chunks.forEach((chunk) => {
-			const utterance = new SpeechSynthesisUtterance(chunk);
-			utterance.rate = 1;
-			utterance.pitch = 1;
-			utterance.lang = 'en-US';
+			const utterance = createHumanLikeUtterance(chunk, synth, 'en-US');
+			if (preferredVoice) {
+				utterance.voice = preferredVoice;
+				utterance.lang = preferredVoice.lang || utterance.lang;
+			}
 
 			utterance.onend = () => {
 				remaining -= 1;
@@ -828,6 +918,10 @@ function attachAnswerVoiceControl(container, text) {
 	controls.appendChild(toggle);
 	controls.appendChild(stop);
 	container.appendChild(controls);
+
+	window.addEventListener('beforeunload', () => {
+		synth.removeEventListener('voiceschanged', refreshPreferredVoice);
+	});
 }
 
 function initializeBrainBot() {
@@ -1985,6 +2079,14 @@ function initializeVoiceReader() {
 	const synth = window.speechSynthesis;
 	let active = false;
 	let paused = false;
+	let preferredVoice = pickPreferredVoice(synth, 'en-US');
+
+	const refreshPreferredVoice = () => {
+		preferredVoice = pickPreferredVoice(synth, 'en-US');
+	};
+
+	refreshPreferredVoice();
+	synth.addEventListener('voiceschanged', refreshPreferredVoice);
 
 	const setStatus = (message) => {
 		status.textContent = message;
@@ -2056,10 +2158,11 @@ function initializeVoiceReader() {
 		let remaining = chunks.length;
 
 		chunks.forEach((chunk) => {
-			const utterance = new SpeechSynthesisUtterance(chunk);
-			utterance.rate = 1;
-			utterance.pitch = 1;
-			utterance.lang = 'en-US';
+			const utterance = createHumanLikeUtterance(chunk, synth, 'en-US');
+			if (preferredVoice) {
+				utterance.voice = preferredVoice;
+				utterance.lang = preferredVoice.lang || utterance.lang;
+			}
 
 			utterance.onend = () => {
 				remaining -= 1;
@@ -2102,6 +2205,7 @@ function initializeVoiceReader() {
 	});
 
 	window.addEventListener('beforeunload', () => {
+		synth.removeEventListener('voiceschanged', refreshPreferredVoice);
 		synth.cancel();
 	});
 }
