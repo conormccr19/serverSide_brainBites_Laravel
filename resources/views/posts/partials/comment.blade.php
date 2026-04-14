@@ -86,7 +86,7 @@
                 </div>
                 <div>
                     <label class="bb-label" for="replyImage-{{ $comment->id }}">Attach image (optional)</label>
-                    <input id="replyImage-{{ $comment->id }}" type="file" name="image" accept="image/*" class="bb-input">
+                    <input id="replyImage-{{ $comment->id }}" type="file" name="image" accept="image/*" class="bb-file-input">
                     @error('image')<p class="bb-error">{{ $message }}</p>@enderror
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-white p-3" data-comment-voice>
@@ -97,6 +97,10 @@
                         <button type="button" class="bb-button-secondary !px-3 !py-1.5 !text-xs" data-comment-voice-start>Record</button>
                         <button type="button" class="bb-button-secondary !px-3 !py-1.5 !text-xs" data-comment-voice-stop disabled>Stop</button>
                         <button type="button" class="bb-button-secondary !px-3 !py-1.5 !text-xs" data-comment-voice-clear disabled>Clear</button>
+                    </div>
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3" data-comment-voice-preview hidden>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview before posting</p>
+                        <audio controls preload="metadata" class="mt-2 w-full" data-comment-voice-audio></audio>
                     </div>
                     <p class="mt-2 text-xs text-slate-600" data-comment-voice-status>No voice note recorded yet.</p>
                     @error('voice_note')<p class="bb-error">{{ $message }}</p>@enderror
