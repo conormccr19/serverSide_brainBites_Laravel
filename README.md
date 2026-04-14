@@ -1,64 +1,163 @@
-<img src="Untitleddesign-ezgif.com-video-to-gif-converter.gif" />
-
 # BrainBites
 
-Visual-first Q&A platform built with Laravel, designed for curiosity-driven learning.
+BrainBites is a Laravel-based, visual learning and discussion platform focused on question-driven study. It combines long-form posts, community interaction, profile features, and an integrated assistant called brainBot.
 
-BrainBites combines community posts, rich visuals, category exploration, and an AI assistant called brainBot in one polished web app.
+This README is written as an operational project guide for local development and maintenance.
 
-## Highlights
+## Table of Contents
 
-- Visual question capsules with image-backed posts
-- Interactive homepage with topic exploration and community stats
-- Dedicated brainBot page with conversation history
-- OpenRouter-powered AI responses with web-context support
-- About and Contact pages with custom visuals
-- Admin contact inbox with resolve/reopen workflow
-- Light/Dark mode toggle with persisted preference
-- Role-aware permissions:
-	- Admins can edit/delete any post
-	- Users can edit/delete only their own posts
+1. [Project Overview](#project-overview)
+2. [Screenshot Placeholders](#screenshot-placeholders)
+3. [Core Features](#core-features)
+4. [Technology Stack](#technology-stack)
+5. [Requirements](#requirements)
+6. [Local Setup](#local-setup)
+7. [Environment Configuration](#environment-configuration)
+8. [Running the Project](#running-the-project)
+9. [Route Reference](#route-reference)
+10. [Data and Schema Notes](#data-and-schema-notes)
+11. [brainBot Integration Notes](#brainbot-integration-notes)
+12. [Admin Operations](#admin-operations)
+13. [Testing and Code Quality](#testing-and-code-quality)
+14. [Troubleshooting](#troubleshooting)
+15. [Deployment Checklist](#deployment-checklist)
+16. [License](#license)
 
-## Tech Stack
+## Project Overview
 
-- Laravel 12
-- PHP 8.2+
-- MySQL
-- Vite (JS/CSS build pipeline)
-- Alpine.js + custom vanilla JS interactions
-- OpenRouter API (for brainBot)
+BrainBites supports the full flow of community-based learning:
 
-## Core Routes
+- Publish and explore educational posts with categories and metadata.
+- Interact through likes, bookmarks, follows, and threaded comments.
+- Navigate public creator profiles and a following feed.
+- Use brainBot for guided Q&A with model-generated responses and source context.
+- Provide support feedback through a contact form and admin inbox workflow.
 
-- `/` Home feed
-- `/posts` Explore posts
-- `/posts/create` Create post (auth)
-- `/posts/{post}` View post
-- `/posts/{post}/edit` Edit post (authorized)
-- `/brainbot` Dedicated chatbot page
-- `/brainbot/chat` Chat endpoint
-- `/brainbot/history` Auth user chat history
-- `/about` About page
-- `/contact` Contact form
-- `/admin/contact-messages` Admin inbox (admin only)
+The application is designed as a classic Laravel web app with server-rendered views, progressive JavaScript enhancements, and Vite-powered asset compilation.
+
+## Screenshot Placeholders
+
+Add screenshots in the sections below as the UI evolves. Keep image files under a folder such as `docs/images/`.
+
+### Home / Explore Feed
+
+![Home Feed Screenshot](docs/images/home-feed.png)
+
+### Post Detail and Comments
+
+![Post Detail Screenshot](docs/images/post-detail.png)
+
+### brainBot Interface
+
+![brainBot Screenshot](docs/images/brainbot.png)
+
+### Public Profile
+
+![Public Profile Screenshot](docs/images/public-profile.png)
+
+### Admin Contact Inbox
+
+![Admin Contact Inbox Screenshot](docs/images/admin-contact-inbox.png)
+
+## Core Features
+
+### Content and Discovery
+
+- Post creation, update, and deletion with authorization checks.
+- Post listing with filtering/sorting support.
+- Category-based exploration.
+- Dedicated glossary and informational pages.
+
+### Social and Engagement
+
+- Like and unlike posts.
+- Bookmark and unbookmark posts.
+- Follow and unfollow users.
+- Following feed for relationship-based discovery.
+
+### Comments and Discussion
+
+- Nested comments/replies.
+- Comment upvotes.
+- Comment actions wired for responsive UX.
+
+### User Profiles
+
+- Public profile route by username.
+- Authenticated account profile management.
+- Creator-centric interaction points in post and profile views.
+
+### brainBot Assistant
+
+- Dedicated chat page.
+- API endpoint for assistant responses.
+- Optional response history for authenticated users.
+- Configurable model and fallback chain through environment settings.
+
+### Contact and Moderation
+
+- Public contact form.
+- Admin-only inbox view.
+- Resolve/reopen workflow for contact messages.
+
+## Technology Stack
+
+- PHP 8.3+
+- Laravel 13
+- MySQL or SQLite (environment-dependent)
+- Blade templates
+- Vite 8
+- Tailwind CSS
+- Alpine.js
+- Axios
+- Laravel Socialite (Google auth/linking)
+
+## Requirements
+
+Minimum local requirements:
+
+- PHP 8.3 or newer
+- Composer
+- Node.js 20+ and npm
+- MySQL 8+ (if not using SQLite)
+
+Recommended:
+
+- Git
+- A local mail catcher for email flow testing
 
 ## Local Setup
 
-1. Install dependencies
+### 1. Clone and enter the project
+
+```bash
+git clone <your-repository-url>
+cd serverSide_brainBites_Laravel
+```
+
+### 2. Install backend and frontend dependencies
 
 ```bash
 composer install
 npm install
 ```
 
-2. Configure environment
+### 3. Initialize environment
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-3. Update `.env` database values
+### 4. Configure database
+
+For SQLite (default-friendly local setup):
+
+```dotenv
+DB_CONNECTION=sqlite
+```
+
+For MySQL:
 
 ```dotenv
 DB_CONNECTION=mysql
@@ -69,105 +168,247 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-4. Configure brainBot (OpenRouter)
-
-```dotenv
-BRAINBOT_MODEL=openai/gpt-oss-120b:free
-BRAINBOT_OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions
-BRAINBOT_OPENROUTER_KEY=your-openrouter-key
-```
-
-5. Run migrations
+### 5. Run migrations
 
 ```bash
 php artisan migrate
 ```
 
-If your database was imported manually and base tables already exist, run only feature migrations as needed:
+If you are importing from SQL dumps, inspect migration state first and only run missing migrations.
 
-```bash
-php artisan migrate --path=database/migrations/2026_04_03_000100_create_contact_messages_table.php
-php artisan migrate --path=database/migrations/2026_04_03_000200_create_brainbot_messages_table.php
-```
-
-6. Build assets and serve
+### 6. Build assets
 
 ```bash
 npm run build
+```
+
+### 7. Start the application
+
+```bash
 php artisan serve
 ```
 
-## Admin Access
+Open your app at the URL printed by Artisan (commonly `http://127.0.0.1:8000`).
 
-Set a user as admin by updating `users.role` to `admin`.
+## Environment Configuration
 
-Example SQL:
+Configure these values in `.env` based on your local environment.
 
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
+### Application
+
+```dotenv
+APP_NAME=BrainBites
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
 ```
 
-Admins can:
+### Session, Cache, Queue
 
-- Edit/delete all posts
-- Access contact inbox at `/admin/contact-messages`
-- Resolve/reopen contact messages
+Project defaults are database-backed session/cache/queue drivers. Ensure required tables exist via migrations.
 
-## brainBot Notes
-
-- brainBot stores authenticated user history in `brainbot_messages`
-- API failures are logged in `storage/logs/laravel.log`
-- If OpenRouter rejects requests due to provider restrictions, update OpenRouter account policy/provider settings
-
-## UX Features
-
-- Inline friendly validation messages for post forms
-- Modal-based delete confirmation (no browser `confirm()`)
-- Dark mode with local storage persistence
-- Animated visual elements on home/about/contact
-
-## Troubleshooting
-
-### `/posts/create` or `/posts/{post}/edit` returns 404
-
-Run:
-
-```bash
-php artisan route:list
+```dotenv
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
 ```
 
-Confirm static routes (`posts/create`) are registered before dynamic post routes.
+### brainBot (OpenRouter)
 
-### App seems stuck on delete prompt overlay
-
-Rebuild and hard refresh:
-
-```bash
-npm run build
+```dotenv
+BRAINBOT_MODEL=meta-llama-3-8b-instruct
+BRAINBOT_FALLBACK_MODELS=openai/gpt-oss-20b:free,meta-llama/llama-3.2-3b-instruct:free,google/gemma-3n-e4b-it:free,liquid/lfm-2.5-1.2b-instruct:free
+BRAINBOT_OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions
+BRAINBOT_OPENROUTER_KEY=your-openrouter-api-key-here
 ```
 
-Then refresh browser with `Ctrl+F5`.
+### Google OAuth (optional)
 
-### OpenRouter endpoint looks "not found" in browser
+```dotenv
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost/auth/google/callback
+```
 
-That is expected. It is an API endpoint and must be called via POST with headers + JSON payload.
+## Running the Project
 
-## Development Commands
+### Standard development workflow
+
+Use separate terminals:
 
 ```bash
-# Laravel routes
-php artisan route:list
-
-# Build frontend assets
-npm run build
-
-# Watch assets (dev)
+php artisan serve
+php artisan queue:listen --tries=1 --timeout=0
 npm run dev
 ```
 
+### Combined workflow through Composer
+
+```bash
+composer run dev
+```
+
+This command starts the web server, queue listener, log stream, and Vite in parallel.
+
+### Production build of frontend assets
+
+```bash
+npm run build
+```
+
+## Route Reference
+
+Key routes currently available:
+
+### Public
+
+- `GET /` home feed
+- `GET /posts` explore posts
+- `GET /posts/{post}` post detail
+- `GET /about` about page
+- `GET /glossary` glossary page
+- `GET /contact` contact form
+- `POST /contact` submit contact form
+- `GET /brainbot` brainBot page
+- `POST /brainbot/chat` assistant chat endpoint (throttled)
+- `GET /brainbot/history` assistant history endpoint (throttled)
+- `GET /u/{user:username}` public user profile
+
+### Authenticated
+
+- `GET /dashboard`
+- `GET /posts/create`
+- `POST /posts`
+- `GET /posts/{post}/edit`
+- `PUT /posts/{post}`
+- `DELETE /posts/{post}`
+- `POST /posts/{post}/like`
+- `POST /posts/{post}/bookmark`
+- `POST /posts/{post}/comments`
+- `DELETE /posts/{post}/comments/{comment}`
+- `POST /posts/{post}/comments/{comment}/upvote`
+- `POST /users/{user}/follow`
+- `GET /following`
+- `GET /bookmarks`
+- `GET /profile`
+- `PATCH /profile`
+- `DELETE /profile`
+
+### Admin
+
+- `GET /admin/contact-messages`
+- `PATCH /admin/contact-messages/{contactMessage}/resolve`
+
+## Data and Schema Notes
+
+The schema supports content, social features, and moderation workflows:
+
+- `users` includes role and profile-related fields.
+- `posts` stores core content and publication metadata.
+- `categories` classifies posts.
+- `comments` supports thread structure.
+- `comment_votes` tracks comment upvotes.
+- `likes` tracks post likes.
+- `bookmarks` stores saved posts per user.
+- `brainbot_messages` persists assistant history for signed-in users.
+- `contact_messages` stores public contact submissions.
+
+The repository also includes SQL resources in `database/` for large seed/schema operations.
+
+## brainBot Integration Notes
+
+brainBot behavior is controlled by `App\Services\BrainBotService`.
+
+Key implementation details:
+
+- Requests are sent to OpenRouter chat completions endpoint.
+- The service can iterate through fallback models on throttling/deprecation failures.
+- Simple web context gathering is included via public search sources.
+- Authenticated requests store question/answer/source payloads in `brainbot_messages`.
+
+Operational notes:
+
+- Missing/invalid OpenRouter configuration results in fallback handling.
+- API failures and malformed responses are logged in `storage/logs/laravel.log`.
+- If free-only usage is required, keep model IDs suffixed with `:free`.
+
+## Admin Operations
+
+To grant admin privileges, update a user record role value to `admin`.
+
+Example:
+
+```sql
+UPDATE users
+SET role = 'admin'
+WHERE email = 'admin@example.com';
+```
+
+Admin capabilities include:
+
+- Accessing contact inbox entries.
+- Resolving and reopening contact tickets.
+- Elevated control over content management (based on policy checks and role conditions).
+
+## Testing and Code Quality
+
+Run test suite:
+
+```bash
+composer test
+```
+
+Run PHPUnit directly:
+
+```bash
+php artisan test
+```
+
+Format code with Laravel Pint:
+
+```bash
+./vendor/bin/pint
+```
+
+## Troubleshooting
+
+### Route returns 404 unexpectedly
+
+- Run `php artisan route:list` and verify route registration.
+- Confirm cached routes/config are not stale.
+
+### Queue-backed features are not processing
+
+- Ensure queue worker is running.
+- Confirm database queue tables exist.
+
+### brainBot is not returning model answers
+
+- Validate OpenRouter environment variables.
+- Check `storage/logs/laravel.log` for API status/error payloads.
+- Confirm model ID is a chat-capable model, not embedding-only.
+
+### OAuth login issues
+
+- Verify callback URL exactly matches provider settings.
+- Re-check `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and redirect URI.
+
+## Deployment Checklist
+
+Before deploying to production:
+
+1. Set `APP_ENV=production` and `APP_DEBUG=false`.
+2. Configure production database credentials.
+3. Set all required API keys/secrets.
+4. Run `composer install --no-dev --optimize-autoloader`.
+5. Run `php artisan migrate --force`.
+6. Build assets with `npm ci && npm run build`.
+7. Cache configuration/routes/views as needed.
+8. Start queue worker and monitor logs.
+
 ## License
 
-This project is open-source and available under the MIT license.
+This project is licensed under the MIT License.
 
 
 # BrainBites Website Status (So Far)
