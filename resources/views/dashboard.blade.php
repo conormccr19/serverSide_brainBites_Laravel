@@ -88,6 +88,49 @@
         </article>
     </section>
 
+    @if ($isAdminView)
+        <section class="bb-card mb-8">
+            <h2 class="text-xl font-bold text-slate-900">Create Category</h2>
+            <p class="mt-1 text-sm text-slate-600">Add a new category that contributors can assign to posts.</p>
+
+            <form method="POST" action="{{ route('admin.categories.store') }}" class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-end">
+                @csrf
+                <div>
+                    <label for="dashboard_category_name" class="bb-label">Name</label>
+                    <input
+                        id="dashboard_category_name"
+                        name="name"
+                        type="text"
+                        class="bb-input"
+                        value="{{ old('name') }}"
+                        required
+                        maxlength="100"
+                    >
+                    @if ($errors->createCategory->has('name'))
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ $errors->createCategory->first('name') }}</p>
+                    @endif
+                </div>
+
+                <div>
+                    <label for="dashboard_category_description" class="bb-label">Description (optional)</label>
+                    <input
+                        id="dashboard_category_description"
+                        name="description"
+                        type="text"
+                        class="bb-input"
+                        value="{{ old('description') }}"
+                        maxlength="500"
+                    >
+                    @if ($errors->createCategory->has('description'))
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ $errors->createCategory->first('description') }}</p>
+                    @endif
+                </div>
+
+                <button type="submit" class="bb-button">Create</button>
+            </form>
+        </section>
+    @endif
+
     <section class="bb-card overflow-x-auto">
         <h2 class="mb-4 text-xl font-bold text-slate-900">{{ $isAdminView ? 'All Posts' : 'Your Posts' }}</h2>
 

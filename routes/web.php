@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\BrainBotController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CommentController;
@@ -50,6 +51,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/contact-messages', [ContactMessageController::class, 'index'])->name('admin.contact-messages.index');
     Route::patch('/admin/contact-messages/{contactMessage}/resolve', [ContactMessageController::class, 'toggleResolved'])->name('admin.contact-messages.resolve');
+    Route::post('/admin/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
 });
 
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
