@@ -6,7 +6,6 @@ Visual-first Q&A platform built with Laravel, designed for curiosity-driven lear
 
 BrainBites combines community posts, rich visuals, category exploration, and an AI assistant called brainBot in one polished web app.
 
-<<<<<<< HEAD
 ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
@@ -16,9 +15,20 @@ BrainBites combines community posts, rich visuals, category exploration, and an 
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
 ## Table of Contents
-=======
-## Highlights
->>>>>>> 0f0624d309bacb0ae96178ac33011d58520ed38f
+
+1. [Core Features](#core-features)
+2. [Tech Stack](#tech-stack)
+3. [Core Routes](#core-routes)
+4. [Local Setup](#local-setup)
+5. [Admin Access](#admin-access)
+6. [brainBot Notes](#brainbot-notes)
+7. [UX Features](#ux-features)
+8. [Troubleshooting](#troubleshooting)
+9. [Development Commands](#development-commands)
+10. [License](#license)
+11. [Final Report](#final-report)
+
+## Core Features
 
 - Visual question capsules with image-backed posts
 - Interactive homepage with topic exploration and community stats
