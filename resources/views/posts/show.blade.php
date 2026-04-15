@@ -119,6 +119,33 @@
                     <a href="{{ route('login') }}" class="bb-button-secondary">Log in to like</a>
                 @endauth
 
+                @auth
+                    @if (! auth()->user()->isAdmin() && auth()->id() !== $post->user_id)
+                        <form action="{{ route('posts.report', $post) }}" method="POST" class="flex flex-wrap items-center gap-2">
+                            @csrf
+                            <select name="reason" class="bb-select max-w-xs" required>
+                                <option value="">Report reason</option>
+                                <option value="Hate speech">Hate speech</option>
+                                <option value="Harassment">Harassment</option>
+                                <option value="Graphic or violent content">Graphic or violent content</option>
+                                <option value="Misinformation">Misinformation</option>
+                                <option value="Spam">Spam</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <input
+                                type="text"
+                                name="details"
+                                class="bb-input max-w-sm"
+                                maxlength="2000"
+                                placeholder="Optional details"
+                            >
+                            <button type="submit" class="bb-button-secondary">Report post</button>
+                            @error('reason')<p class="bb-error w-full">{{ $message }}</p>@enderror
+                            @error('details')<p class="bb-error w-full">{{ $message }}</p>@enderror
+                        </form>
+                    @endif
+                @endauth
+
                 @can('update', $post)
                     <a href="{{ route('posts.edit', $post) }}" class="bb-button-secondary">Edit</a>
 

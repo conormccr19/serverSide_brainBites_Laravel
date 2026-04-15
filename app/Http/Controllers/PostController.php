@@ -8,8 +8,10 @@ use App\Models\Category;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\ContentModerationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -33,7 +35,14 @@ class PostController extends Controller
             ->withCount(['likes', 'comments'])
             ->when(auth()->check(), function ($query): void {
                 $query->where(function ($nested): void {
-                    $nested->where('is_public', true)
+                    $nested->where(function ($publicNested): void {
+                        $publicNested->where('is_public', true)
+                            ->where('approval_status', 'approved')
+                            ->where(function ($visibilityNested): void {
+                                $visibilityNested->whereNull('published_at')
+                                    ->orWhere('published_at', '<=', now());
+                            });
+                    })
                         ->orWhere('user_id', auth()->id());
                 });
             }, function ($query): void {
@@ -156,19 +165,33 @@ class PostController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePostRequest $request): RedirectResponse
+    public function store(StorePostRequest $request, ContentModerationService $contentModeration): RedirectResponse
     {
         $this->authorize('create', Post::class);
 
         $data = $request->validated();
+        $this->ensureContentIsAllowed($contentModeration, [
+            (string) ($data['title'] ?? ''),
+            (string) ($data['summary'] ?? ''),
+            (string) ($data['body'] ?? ''),
+        ]);
+
         $data['user_id'] = $request->user()->id;
         $data['slug'] = Post::uniqueSlug($data['title']);
         if (! ($data['is_public'] ?? false)) {
             $data['published_at'] = null;
+            $data['approval_status'] = 'draft';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
+            $data['rejected_at'] = null;
         } elseif (! empty($data['published_at'])) {
             $data['published_at'] = $data['published_at'];
         } else {
             $data['published_at'] = now();
+        }
+
+        if (($data['is_public'] ?? false) === true) {
+            $this->applyApprovalWorkflow($request->user(), $data, null);
         }
 
         if ($request->hasFile('image')) {
@@ -184,7 +207,9 @@ class PostController extends Controller
 
         return redirect()
             ->route('posts.show', $post)
-            ->with('status', 'Post published successfully.');
+            ->with('status', $post->approval_status === 'pending'
+                ? 'Post submitted for admin approval. Your first 3 public posts are reviewed before going live.'
+                : 'Post published successfully.');
     }
 
     /**
@@ -192,11 +217,11 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): View
     {
-        $isScheduledForFuture = $post->is_public
-            && $post->published_at
-            && $post->published_at->isFuture();
+        if (! auth()->check() && ! $post->isPublishedPublicly()) {
+            abort(403);
+        }
 
-        if ((! $post->is_public || $isScheduledForFuture) && (! auth()->check() || auth()->user()->cannot('view', $post))) {
+        if (auth()->check() && auth()->user()->cannot('view', $post)) {
             abort(403);
         }
 
@@ -299,11 +324,17 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePostRequest $request, Post $post): RedirectResponse
+    public function update(UpdatePostRequest $request, Post $post, ContentModerationService $contentModeration): RedirectResponse
     {
         $this->authorize('update', $post);
 
         $data = $request->validated();
+        $this->ensureContentIsAllowed($contentModeration, [
+            (string) ($data['title'] ?? ''),
+            (string) ($data['summary'] ?? ''),
+            (string) ($data['body'] ?? ''),
+        ]);
+
         $data['slug'] = Post::uniqueSlug($data['title'], $post->id);
 
         if ($request->hasFile('image')) {
@@ -317,6 +348,10 @@ class PostController extends Controller
 
         if (($data['is_public'] ?? true) === false) {
             $data['published_at'] = null;
+            $data['approval_status'] = 'draft';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
+            $data['rejected_at'] = null;
         } elseif (! empty($data['published_at'])) {
             $data['published_at'] = $data['published_at'];
         } elseif (! $post->published_at) {
@@ -325,11 +360,17 @@ class PostController extends Controller
             unset($data['published_at']);
         }
 
+        if (($data['is_public'] ?? true) === true) {
+            $this->applyApprovalWorkflow($request->user(), $data, $post->id);
+        }
+
         $post->update($data);
 
         return redirect()
             ->route('posts.show', $post)
-            ->with('status', 'Post updated successfully.');
+            ->with('status', $post->approval_status === 'pending'
+                ? 'Post updates submitted for admin approval.'
+                : 'Post updated successfully.');
     }
 
     /**
@@ -344,5 +385,61 @@ class PostController extends Controller
         return redirect()
             ->route('dashboard')
             ->with('status', 'Post deleted successfully.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function applyApprovalWorkflow(User $user, array &$data, ?int $ignorePostId): void
+    {
+        if ($user->isAdmin()) {
+            $data['approval_status'] = 'approved';
+            $data['approved_by'] = $user->id;
+            $data['approved_at'] = now();
+            $data['rejected_at'] = null;
+
+            return;
+        }
+
+        if ($this->requiresInitialModeration($user, $ignorePostId)) {
+            $data['approval_status'] = 'pending';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
+            $data['rejected_at'] = null;
+
+            return;
+        }
+
+        $data['approval_status'] = 'approved';
+        $data['approved_by'] = null;
+        $data['approved_at'] = now();
+        $data['rejected_at'] = null;
+        $data['review_notes'] = null;
+    }
+
+    private function requiresInitialModeration(User $user, ?int $ignorePostId): bool
+    {
+        $publicPostsCount = $user->posts()
+            ->where('is_public', true)
+            ->when($ignorePostId, fn ($query) => $query->whereKeyNot($ignorePostId))
+            ->count();
+
+        return $publicPostsCount < 3;
+    }
+
+    /**
+     * @param  array<int, string>  $parts
+     */
+    private function ensureContentIsAllowed(ContentModerationService $contentModeration, array $parts): void
+    {
+        $matches = $contentModeration->findBlockedTerms(implode("\n", $parts));
+
+        if ($matches === []) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'body' => 'Your post contains terms that violate community guidelines. Please remove harmful language and try again.',
+        ]);
     }
 }
