@@ -6,7 +6,29 @@ Visual-first Q&A platform built with Laravel, designed for curiosity-driven lear
 
 BrainBites combines community posts, rich visuals, category exploration, and an AI assistant called brainBot in one polished web app.
 
-## Highlights
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Blade](https://img.shields.io/badge/Blade-FF6A00?style=for-the-badge&logo=laravel&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+
+## Table of Contents
+
+1. [Core Features](#core-features)
+2. [Tech Stack](#tech-stack)
+3. [Core Routes](#core-routes)
+4. [Local Setup](#local-setup)
+5. [Admin Access](#admin-access)
+6. [brainBot Notes](#brainbot-notes)
+7. [UX Features](#ux-features)
+8. [Troubleshooting](#troubleshooting)
+9. [Development Commands](#development-commands)
+10. [License](#license)
+11. [Final Report](#final-report)
+
+## Core Features
 
 - Visual question capsules with image-backed posts
 - Interactive homepage with topic exploration and community stats
