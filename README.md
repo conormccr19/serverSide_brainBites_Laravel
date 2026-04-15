@@ -150,6 +150,16 @@ Admins can:
 
 ## Troubleshooting
 
+### Azure Linux App Service shows the default placeholder page
+
+Add a file named `default` at the repo root with an NGINX server block that uses `root /home/site/wwwroot/public;`, then set the App Service startup command to:
+
+```bash
+cp /home/site/wwwroot/default /etc/nginx/sites-available/default && service nginx reload
+```
+
+After saving the startup command, restart the App Service.
+
 ### `/posts/create` or `/posts/{post}/edit` returns 404
 
 Run:
