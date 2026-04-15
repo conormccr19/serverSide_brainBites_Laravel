@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use App\Models\Post;
+use App\Models\PostReport;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,12 +18,12 @@ class ContactMessageController extends Controller
         abort_unless($request->user()?->isAdmin(), 403);
 
         $section = (string) $request->string('section', 'contacts');
-        if (! in_array($section, ['contacts', 'posts', 'users'], true)) {
+        if (! in_array($section, ['contacts', 'posts', 'reports', 'users'], true)) {
             $section = 'contacts';
         }
 
         $filter = (string) $request->string('filter', 'open');
-        if (! in_array($filter, ['open', 'resolved', 'all', 'pending', 'approved', 'rejected', 'active', 'banned'], true)) {
+        if (! in_array($filter, ['open', 'resolved', 'all', 'pending', 'approved', 'rejected', 'actioned', 'dismissed', 'active', 'banned'], true)) {
             $filter = 'open';
         }
 
@@ -42,6 +43,14 @@ class ContactMessageController extends Controller
             ->paginate(12, ['*'], 'posts_page')
             ->withQueryString();
 
+        $reportFilter = in_array($filter, ['pending', 'actioned', 'dismissed', 'all'], true) ? $filter : 'pending';
+        $reports = PostReport::query()
+            ->with(['post.user', 'reporter', 'reviewer'])
+            ->when($reportFilter !== 'all', fn ($query) => $query->where('status', $reportFilter))
+            ->latest('created_at')
+            ->paginate(12, ['*'], 'reports_page')
+            ->withQueryString();
+
         $userFilter = in_array($filter, ['active', 'banned', 'all'], true) ? $filter : 'active';
         $users = User::query()
             ->where('role', '!=', 'admin')
@@ -54,9 +63,11 @@ class ContactMessageController extends Controller
         return view('admin.contact-messages.index', [
             'messages' => $messages,
             'posts' => $posts,
+            'reports' => $reports,
             'users' => $users,
             'section' => $section,
             'postFilter' => $postFilter,
+            'reportFilter' => $reportFilter,
             'userFilter' => $userFilter,
             'filter' => $filter,
         ]);
@@ -149,5 +160,24 @@ class ContactMessageController extends Controller
         ]);
 
         return back()->with('status', 'User has been banned.');
+    }
+
+    public function reviewPostReport(Request $request, PostReport $postReport): RedirectResponse
+    {
+        abort_unless($request->user()?->isAdmin(), 403);
+
+        $data = $request->validate([
+            'status' => ['required', 'in:actioned,dismissed'],
+            'review_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $postReport->update([
+            'status' => (string) $data['status'],
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_notes' => filled($data['review_notes'] ?? null) ? trim((string) $data['review_notes']) : null,
+        ]);
+
+        return back()->with('status', 'Report reviewed successfully.');
     }
 }

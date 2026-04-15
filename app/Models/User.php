@@ -98,6 +98,16 @@ class User extends Authenticatable
         return $this->hasMany(BrainBotMessage::class);
     }
 
+    public function postReports(): HasMany
+    {
+        return $this->hasMany(PostReport::class, 'reporter_id');
+    }
+
+    public function reviewedPostReports(): HasMany
+    {
+        return $this->hasMany(PostReport::class, 'reviewed_by');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

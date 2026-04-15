@@ -12,6 +12,7 @@ use App\Http\Controllers\FollowingFeedController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,7 @@ Route::middleware('not_banned')->group(function () {
         Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
         Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
         Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+        Route::post('/posts/{post}/report', [PostReportController::class, 'store'])->name('posts.report');
 
         Route::post('/posts/{post}/like', LikeController::class)->name('posts.like');
         Route::post('/posts/{post}/bookmark', BookmarkController::class)->name('posts.bookmark');
@@ -54,6 +56,7 @@ Route::middleware('not_banned')->group(function () {
         Route::patch('/admin/contact-messages/{contactMessage}/resolve', [ContactMessageController::class, 'toggleResolved'])->name('admin.contact-messages.resolve');
         Route::patch('/admin/posts/{post}/approve', [ContactMessageController::class, 'approvePost'])->name('admin.posts.approve');
         Route::patch('/admin/posts/{post}/reject', [ContactMessageController::class, 'rejectPost'])->name('admin.posts.reject');
+        Route::patch('/admin/post-reports/{postReport}/review', [ContactMessageController::class, 'reviewPostReport'])->name('admin.post-reports.review');
         Route::patch('/admin/users/{user}/ban', [ContactMessageController::class, 'toggleBanUser'])->name('admin.users.ban');
         Route::post('/admin/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
     });

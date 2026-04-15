@@ -72,6 +72,11 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(PostReport::class);
+    }
+
     public function scopePublic(Builder $query): Builder
     {
         return $query->where('is_public', true)
