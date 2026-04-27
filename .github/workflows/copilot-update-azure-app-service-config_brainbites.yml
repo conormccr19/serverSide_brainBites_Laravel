@@ -6,7 +6,7 @@ name: Build and deploy PHP app to Azure Web App - Brainbites
 on:
   push:
     branches:
-      - main
+      - copilot/update-azure-app-service-config
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Check if composer.json exists
         id: check_files
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@v1
         with:
           files: 'composer.json'
 
@@ -56,9 +56,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_858D7288089D4E5B83E1FFC554F9BABF }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A0884A23B363488396B185BF5C974AD9 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_137BEF2CF4C54C3B81D9B2E18494E572 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_760651BF34FB45E89660476F6A71E637 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B5F29C2D1AC24A1B8FE1DE63F6E17F32 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C712BE09358A4F2DA4340BD3D2B2D243 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
